@@ -70,3 +70,69 @@ Trường đề xuất:
 - `url`
 - `size`
 - `createdAt`
+
+## 6. activitylogs
+Lưu lịch sử hoạt động (audit log).
+
+Trường đề xuất:
+- `_id`
+- `user_id`
+- `action`
+- `target_type`
+- `target_id`
+- `details`
+- `snapshot`
+- `createdAt`
+- `updatedAt`
+- `__v`
+
+Ví dụ document:
+```json
+{
+	"user_id": {
+		"$oid": "6a01ca9460c7f2ffe99eff9b"
+	},
+	"action": "update_presentation",
+	"target_type": "presentation",
+	"target_id": {
+		"$oid": "6a01ceb93f807b9c41de3af8"
+	},
+	"details": {
+		"title": "Konnichiwa"
+	},
+	"snapshot": {
+		"title": "Konnichiwa",
+		"slides": [
+			{
+				"id": "s_blank_1778503347040",
+				"title": "Konnichiwa",
+				"backgroundImage": "",
+				"elements": [
+					{
+						"id": "el_text_konnichiwa_1778503347040",
+						"type": "text",
+						"content": "Konnichiwa",
+						"fontSize": 32,
+						"bold": true,
+						"italic": false,
+						"underline": false,
+						"align": "left",
+						"x": 12,
+						"y": 22,
+						"w": 54,
+						"h": 18,
+						"z_index": 0
+					}
+				]
+			}
+		]
+	},
+	"createdAt": {
+		"$date": "2026-05-11T12:42:35.211Z"
+	},
+	"updatedAt": {
+		"$date": "2026-05-11T12:42:35.211Z"
+	},
+	"__v": 0
+}
+```
