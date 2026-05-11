@@ -9,18 +9,18 @@ import { SettingsPage } from './pages/SettingsPage.jsx';
 import { TemplateListPage } from './pages/TemplateListPage.jsx';
 import { TemplateDetailPage } from './pages/TemplateDetailPage.jsx';
 import { SlideEditorPage } from './pages/SlideEditorPage.jsx';
+import { getUser, clearToken } from './api.js';
 import './styles.css';
 
 const defaultProfile = { name: 'Tuệ', email: 'teacher@example.com', level: 'N3/N4', language: '日本語' };
 
 function App() {
   const [route, setRoute] = useState('login');
-  const [selectedTemplateId, setSelectedTemplateId] = useState('tpl_001');
+  const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [editingDeckId, setEditingDeckId] = useState(null);
   const [globalKeyword, setGlobalKeyword] = useState('');
   const [profile, setProfile] = useState(() => {
-    const saved = localStorage.getItem('smartslide_profile');
-    return saved ? JSON.parse(saved) : defaultProfile;
+    return getUser() || defaultProfile;
   });
 
   const page = useMemo(() => {
@@ -32,12 +32,16 @@ function App() {
       if (Object.prototype.hasOwnProperty.call(payload, 'deckId')) setEditingDeckId(payload.deckId);
       if (next === 'editor' && !Object.prototype.hasOwnProperty.call(payload, 'deckId')) setEditingDeckId(null);
       if (typeof payload.keyword === 'string') setGlobalKeyword(payload.keyword);
+      // Logout → clear session
+      if (next === 'login') {
+        clearToken();
+      }
       setRoute(next);
     };
 
     const layoutProps = { nav, profile };
 
-    if (route === 'login') return <LoginPage nav={nav} />;
+    if (route === 'login') return <LoginPage nav={nav} setProfile={setProfile} />;
     if (route === 'register') return <RegisterPage nav={nav} />;
     if (route === 'dashboard') return <DashboardPage {...layoutProps} />;
     if (route === 'slides') return <MySlidesPage {...layoutProps} />;

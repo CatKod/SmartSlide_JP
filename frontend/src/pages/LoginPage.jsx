@@ -1,14 +1,32 @@
 import React, { useState } from 'react';
 import { BookOpen, CheckCircle2, Sparkles, Wand2 } from 'lucide-react';
+import { apiLogin, saveUser } from '../api.js';
 
-export function LoginPage({ nav }) {
+export function LoginPage({ nav, setProfile }) {
   const [error, setError] = useState('');
-  function submit(e){
+  const [loading, setLoading] = useState(false);
+
+  async function submit(e){
     e.preventDefault();
     const data = new FormData(e.currentTarget);
-    if(!data.get('email') || !data.get('password')) return setError('メールアドレスまたはパスワードを入力してください。');
-    nav('dashboard');
+    const email = data.get('email');
+    const password = data.get('password');
+    if(!email || !password) return setError('メールアドレスまたはパスワードを入力してください。');
+
+    setLoading(true);
+    setError('');
+    try {
+      const res = await apiLogin(email, password);
+      // Cập nhật profile từ server response
+      setProfile(res.user);
+      nav('dashboard');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
+
   return <div className="auth-page">
     <section className="hero rich-hero">
       <div className="hero-glow one" />
@@ -31,9 +49,9 @@ export function LoginPage({ nav }) {
     </section>
     <form className="auth-card" onSubmit={submit}>
       <h2>おかえりなさい！</h2><label>メール</label><input name="email" type="email" placeholder="teacher@example.com" defaultValue="teacher@example.com" />
-      <label>パスワード</label><input name="password" type="password" placeholder="パスワード" defaultValue="12345678" />
+      <label>パスワード</label><input name="password" type="password" placeholder="パスワード" defaultValue="password" />
       {error && <p className="error">{error}</p>}
-      <button className="pink full">ログイン</button><button type="button" className="link" onClick={() => nav('register')}>新規アカウント作成</button>
+      <button className="pink full" disabled={loading}>{loading ? 'ログイン中...' : 'ログイン'}</button><button type="button" className="link" onClick={() => nav('register')}>新規アカウント作成</button>
     </form>
   </div>
 }

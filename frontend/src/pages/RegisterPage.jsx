@@ -1,15 +1,34 @@
 import React, { useState } from 'react';
 import { BookOpen, CheckCircle2, Sparkles, Wand2 } from 'lucide-react';
+import { apiRegister } from '../api.js';
 
 export function RegisterPage({ nav }) {
   const [message, setMessage] = useState('');
-  function submit(e){
+  const [loading, setLoading] = useState(false);
+
+  async function submit(e){
     e.preventDefault();
     const data = new FormData(e.currentTarget);
-    if(!data.get('name') || !data.get('email') || !data.get('password')) return setMessage('必須項目を入力してください。');
-    alert('登録しました。ログインしてください。');
-    nav('login');
+    const name = data.get('name');
+    const email = data.get('email');
+    const password = data.get('password');
+    if(!name || !email || !password) return setMessage('必須項目を入力してください。');
+
+    setLoading(true);
+    setMessage('');
+    try {
+      // username = email prefix hoặc name
+      const username = email.split('@')[0];
+      await apiRegister({ username, name, email, password });
+      alert('登録しました。ログインしてください。');
+      nav('login');
+    } catch (err) {
+      setMessage(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
+
   return <div className="auth-page">
     <section className="hero rich-hero">
       <div className="hero-glow one" />
@@ -33,9 +52,9 @@ export function RegisterPage({ nav }) {
     <form className="auth-card" onSubmit={submit}>
       <h2>新規アカウント作成</h2><label>名前</label><input name="name" placeholder="Tuệ先生" />
       <label>メール</label><input name="email" type="email" placeholder="teacher@example.com" />
-      <label>パスワード</label><input name="password" type="password" placeholder="8文字以上" />
+      <label>パスワード</label><input name="password" type="password" placeholder="6文字以上" />
       {message && <p className="error">{message}</p>}
-      <button className="pink full">登録する</button><button type="button" className="link" onClick={() => nav('login')}>ログイン画面へ</button>
+      <button className="pink full" disabled={loading}>{loading ? '登録中...' : '登録する'}</button><button type="button" className="link" onClick={() => nav('login')}>ログイン画面へ</button>
     </form>
   </div>
 }

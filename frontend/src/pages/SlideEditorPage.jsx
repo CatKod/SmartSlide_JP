@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AppLayout } from '../components/Layout.jsx';
-import { cloneSlides, defaultSlides, templates } from '../data/mockData.js';
+import { cloneSlides } from '../data/mockData.js';
+import { apiGetSlide, apiGetTemplateDetail, apiCreateSlide, apiUpdateSlide, apiUploadImage } from '../api.js';
 import { ImagePlus, Save, Type, Upload, Plus, Trash2, Download } from 'lucide-react';
 
 const TEXT_PLACEHOLDER = 'ここにテキストを入力してください';
@@ -27,10 +28,9 @@ function createBlankSlides() {
   }];
 }
 
+// loadSavedDeck giờ là async, được gọi trong useEffect
 function loadSavedDeck(deckId) {
-  if (!deckId) return null;
-  const decks = JSON.parse(localStorage.getItem('smartslide_saved_decks') || '[]');
-  return decks.find(deck => deck.id === deckId) || null;
+  return null; // placeholder - actual loading happens in useEffect
 }
 
 function normalizeSlide(slide, index = 0) {
@@ -85,27 +85,55 @@ function normalizeSlides(slides) {
 }
 
 export function SlideEditorPage({ nav, templateId, deckId, profile }) {
-  const template = templateId ? templates.find(t => t.id === templateId) : null;
-  const savedDeck = useMemo(() => loadSavedDeck(deckId), [deckId]);
   const [currentDeckId, setCurrentDeckId] = useState(deckId || null);
-  const [slides, setSlides] = useState(() => normalizeSlides(savedDeck ? savedDeck.slides : (template ? cloneSlides(template.slidesData) : createBlankSlides())));
+  const [slides, setSlides] = useState(() => normalizeSlides(createBlankSlides()));
   const [active, setActive] = useState(0);
   const [selectedId, setSelectedId] = useState(null);
   const [notice, setNotice] = useState('');
   const [exportFormat, setExportFormat] = useState('pdf');
+  const [saving, setSaving] = useState(false);
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
   const resizeRef = useRef(null);
   const slideDragRef = useRef(null);
 
+  // Load slide/template data từ backend
   useEffect(() => {
-    const deck = loadSavedDeck(deckId);
-    setCurrentDeckId(deckId || null);
-    setSlides(normalizeSlides(deck ? deck.slides : (template ? cloneSlides(template.slidesData) : createBlankSlides())));
-    setActive(0);
-    setSelectedId(null);
-    setNotice('');
+    let cancelled = false;
+    async function load() {
+      try {
+        if (deckId) {
+          // Mở slide đã lưu
+          const data = await apiGetSlide(deckId);
+          if (!cancelled && data.slide) {
+            setCurrentDeckId(data.slide._id);
+            setSlides(normalizeSlides(data.slide.slides || []));
+          }
+        } else if (templateId) {
+          // Tạo mới từ template
+          const data = await apiGetTemplateDetail(templateId);
+          if (!cancelled && data.template) {
+            setSlides(normalizeSlides(cloneSlides(data.template.slidesData || [])));
+            setCurrentDeckId(null);
+          }
+        } else {
+          // Slide trắng
+          if (!cancelled) {
+            setSlides(normalizeSlides(createBlankSlides()));
+            setCurrentDeckId(null);
+          }
+        }
+      } catch (err) {
+        if (!cancelled) setNotice('データの読み込みに失敗しました。');
+      }
+      if (!cancelled) {
+        setActive(0);
+        setSelectedId(null);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
   }, [deckId, templateId]);
 
   useEffect(() => {
@@ -250,13 +278,20 @@ export function SlideEditorPage({ nav, templateId, deckId, profile }) {
     appendImage(url);
   }
 
-  function uploadImage(e) {
+  async function uploadImage(e) {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => appendImage(String(reader.result));
-    reader.readAsDataURL(file);
+    try {
+      // Upload ảnh lên backend, nhận URL
+      const res = await apiUploadImage(file);
+      appendImage(`http://localhost:5000${res.url}`);
+    } catch {
+      // Fallback: dùng DataURL nếu upload thất bại
+      const reader = new FileReader();
+      reader.onload = () => appendImage(String(reader.result));
+      reader.readAsDataURL(file);
+    }
   }
 
   function toggleFormat(key) {
@@ -339,21 +374,26 @@ export function SlideEditorPage({ nav, templateId, deckId, profile }) {
     };
   }
 
-  function save() {
-    const existing = JSON.parse(localStorage.getItem('smartslide_saved_decks') || '[]');
-    const id = currentDeckId || `deck_${Date.now()}`;
-    const deck = {
-      id,
-      title: slides[0]?.title || '無題のスライド',
-      slides,
-      templateId: template?.id || null,
-      updatedAt: new Date().toLocaleString('ja-JP'),
-    };
-    const exists = existing.some(d => d.id === id);
-    const next = exists ? existing.map(d => d.id === id ? deck : d) : [deck, ...existing];
-    localStorage.setItem('smartslide_saved_decks', JSON.stringify(next.slice(0, 20)));
-    setCurrentDeckId(id);
-    setNotice(exists ? '既存のスライドを更新しました。' : '新しいスライドとして保存しました。');
+  async function save() {
+    setSaving(true);
+    setNotice('保存中...');
+    try {
+      const title = slides[0]?.title || '無題のスライド';
+      if (currentDeckId) {
+        // 既存スライドを更新
+        await apiUpdateSlide(currentDeckId, { title, slides, templateId: templateId || null });
+        setNotice('既存のスライドを更新しました。');
+      } else {
+        // 新規作成
+        const res = await apiCreateSlide({ title, slides, templateId: templateId || null });
+        setCurrentDeckId(res.slide._id);
+        setNotice('新しいスライドとして保存しました。');
+      }
+    } catch (err) {
+      setNotice('保存に失敗しました: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
 
@@ -520,7 +560,7 @@ export function SlideEditorPage({ nav, templateId, deckId, profile }) {
           <button className={selectedElement?.align === 'left' ? 'active-tool align-tool' : 'align-tool'} onClick={() => setTextFormat({ align: 'left' })} disabled={selectedElement?.type !== 'text'}>左</button>
           <button className={selectedElement?.align === 'center' ? 'active-tool align-tool' : 'align-tool'} onClick={() => setTextFormat({ align: 'center' })} disabled={selectedElement?.type !== 'text'}>中</button>
           <button className={selectedElement?.align === 'right' ? 'active-tool align-tool' : 'align-tool'} onClick={() => setTextFormat({ align: 'right' })} disabled={selectedElement?.type !== 'text'}>右</button>
-          <button onClick={save}><Save size={16}/>保存</button>
+          <button onClick={save} disabled={saving}><Save size={16}/>{saving ? '保存中...' : '保存'}</button>
           <button onClick={() => nav('slides')}>マイスライドへ</button>
           <div className="export-tools">
             <select value={exportFormat} onChange={e => setExportFormat(e.target.value)} aria-label="出力形式">
