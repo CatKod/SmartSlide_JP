@@ -51,7 +51,11 @@ export function LoginPage({ nav, setProfile }) {
       <h2>おかえりなさい！</h2><label>メール</label><input name="email" type="email" placeholder="teacher@example.com" defaultValue="teacher@example.com" />
       <label>パスワード</label><input name="password" type="password" placeholder="パスワード" defaultValue="password" />
       {error && <p className="error">{error}</p>}
-      <button className="pink full" disabled={loading}>{loading ? 'ログイン中...' : 'ログイン'}</button><button type="button" className="link" onClick={() => nav('register')}>新規アカウント作成</button>
+      <button className="pink full auth-submit" disabled={loading}>{loading ? 'ログイン中...' : 'ログイン'}</button>
+      <div className="auth-links">
+        <button type="button" className="link" onClick={() => nav('register')}>新規アカウント作成</button>
+        <button type="button" className="link" onClick={() => nav('forgot')}>パスワードを忘れた方はこちら</button>
+      </div>
     </form>
   </div>
 }

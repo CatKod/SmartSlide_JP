@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AppLayout } from '../components/Layout.jsx';
 import { apiGetMaterials, apiUploadMaterial, apiDeleteMaterial, getToken } from '../api.js';
 import { Download, Search, Upload, X, Trash2 } from 'lucide-react';
+import { Bi, biText } from '../i18n.jsx';
 
 function isPreviewable(material) {
   return material.mime?.includes('pdf') || material.mime?.startsWith('image/') || material.mime?.startsWith('text/') || material.previewText;
@@ -14,6 +15,7 @@ export function SharedMaterialsPage({ nav, profile }) {
   const [loading, setLoading] = useState(true);
   const [preview, setPreview] = useState(null);
   const fileInputRef = useRef(null);
+  const bi = profile?.language === '日本語 + Tiếng Việt';
 
   useEffect(() => {
     let cancelled = false;
@@ -41,21 +43,20 @@ export function SharedMaterialsPage({ nav, profile }) {
       a.click();
       a.remove();
       URL.revokeObjectURL(objectUrl);
-      setNotice(`${material.title}をダウンロードしました。`);
+      setNotice(bi ? `${material.title}をダウンロードしました。\nĐã tải xuống ${material.title}.` : `${material.title}をダウンロードしました。`);
     } catch (error) {
       console.error(error);
-      setNotice('ダウンロードに失敗しました。もう一度お試しください。');
+      setNotice(bi ? 'ダウンロードに失敗しました。もう一度お試しください。\nTải xuống thất bại. Vui lòng thử lại.' : 'ダウンロードに失敗しました。もう一度お試しください。');
     }
   }
 
-
   async function deleteMaterial(material) {
-    if (!window.confirm(`${material.title}を削除しますか。`)) return;
+    if (!window.confirm(bi ? `${material.title}を削除しますか。\nBạn có muốn xóa ${material.title} không?` : `${material.title}を削除しますか。`)) return;
     try {
       await apiDeleteMaterial(material._id);
       setMaterials(prev => prev.filter(item => item._id !== material._id));
       if (preview?._id === material._id) setPreview(null);
-      setNotice(`${material.title}を削除しました。`);
+      setNotice(bi ? `${material.title}を削除しました。\nĐã xóa ${material.title}.` : `${material.title}を削除しました。`);
     } catch (err) {
       setNotice('削除に失敗しました: ' + err.message);
     }
@@ -65,14 +66,14 @@ export function SharedMaterialsPage({ nav, profile }) {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setNotice(`${file.name}をアップロード中...`);
+    setNotice(bi ? `${file.name}をアップロード中...\nĐang tải lên ${file.name}...` : `${file.name}をアップロード中...`);
     try {
       // Gọi API upload
       const res = await apiUploadMaterial(file, file.name.replace(/\.[^/.]+$/, ''), '共有');
       // Lấy lại danh sách material (hoặc thêm luôn res vào danh sách)
       const listData = await apiGetMaterials();
       setMaterials(listData.materials || []);
-      setNotice(`${file.name}をアップロードしました。`);
+      setNotice(bi ? `${file.name}をアップロードしました。\nĐã tải lên ${file.name}.` : `${file.name}をアップロードしました。`);
     } catch (err) {
       setNotice('アップロードに失敗しました: ' + err.message);
     }
@@ -82,16 +83,16 @@ export function SharedMaterialsPage({ nav, profile }) {
   return <AppLayout nav={nav} active="shared" profile={profile}>
     <section className="page-head material-head">
       <div>
-        <h1>共有教材</h1>
-        <p>チーム内で共有されたPDF教材を検索・プレビュー・ダウンロードできます。</p>
+        <h1><Bi jp="共有教材" vi="Tài liệu chung" profile={profile}/></h1>
+        <p><Bi jp="チーム内で共有されたPDF教材を検索・プレビュー・ダウンロードできます。" vi="Có thể tìm kiếm, xem trước và tải xuống tài liệu PDF được chia sẻ trong nhóm." profile={profile}/></p>
       </div>
       <div className="head-actions">
-        <button className="pink" onClick={() => fileInputRef.current?.click()}><Upload size={16}/>教材をアップロード</button>
+        <button className="pink" onClick={() => fileInputRef.current?.click()}><Upload size={16}/><Bi jp="教材をアップロード" vi="Tải tài liệu lên" profile={profile}/></button>
         <input ref={fileInputRef} type="file" onChange={uploadMaterial} hidden />
       </div>
     </section>
 
-    <div className="filters"><input value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder="共有教材を検索" /></div>
+    <div className="filters"><input value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder={biText(profile, '共有教材を検索', 'Tìm tài liệu chung')} /></div>
     {notice && <div className="notice spaced">{notice}</div>}
 
     <section className="panel material-panel">
@@ -102,12 +103,12 @@ export function SharedMaterialsPage({ nav, profile }) {
           <p>{m.type}・{m.level}・{m.ownerName}</p>
         </div>
         <div className="material-actions">
-          <button className="outline" onClick={() => setPreview(m)}><Search size={14}/>プレビュー</button>
-          <button className="outline" onClick={()=>downloadMaterial(m)}><Download size={14}/>ダウンロード</button>
-          <button className="outline danger material-delete" onClick={()=>deleteMaterial(m)}><Trash2 size={14}/>削除</button>
+          <button className="outline" onClick={() => setPreview(m)}><Search size={14}/><Bi jp="プレビュー" vi="Xem trước" profile={profile}/></button>
+          <button className="outline" onClick={()=>downloadMaterial(m)}><Download size={14}/><Bi jp="ダウンロード" vi="Tải xuống" profile={profile}/></button>
+          <button className="outline danger material-delete" onClick={()=>deleteMaterial(m)}><Trash2 size={14}/><Bi jp="削除" vi="Xóa" profile={profile}/></button>
         </div>
       </div>)}
-      {!loading && !rows.length && <div className="empty compact">該当なし</div>}
+      {!loading && !rows.length && <div className="empty compact"><Bi jp="該当なし" vi="Không có kết quả" profile={profile}/></div>}
     </section>
 
     {preview && <div className="modal-backdrop" onMouseDown={() => setPreview(null)}>
@@ -120,11 +121,11 @@ export function SharedMaterialsPage({ nav, profile }) {
           {preview.mimeType?.includes('pdf') && <iframe title={preview.title} src={`http://localhost:5000/api/materials/${preview._id}/preview`}></iframe>}
           {preview.mimeType?.startsWith('image/') && <img src={`http://localhost:5000${preview.fileUrl}`} alt={preview.title} />}
           {preview.mimeType?.startsWith('text/') && <iframe title={preview.title} src={`http://localhost:5000/api/materials/${preview._id}/preview`}></iframe>}
-          {!preview.mimeType?.includes('pdf') && !preview.mimeType?.startsWith('image/') && !preview.mimeType?.startsWith('text/') && <div className="empty compact">このファイル形式はブラウザでプレビューできません。ダウンロードして確認してください。</div>}
+          {!preview.mimeType?.includes('pdf') && !preview.mimeType?.startsWith('image/') && !preview.mimeType?.startsWith('text/') && <div className="empty compact"><Bi jp="このファイル形式はブラウザでプレビューできません。ダウンロードして確認してください。" vi="Định dạng này không xem trước được trên trình duyệt. Vui lòng tải xuống để kiểm tra." profile={profile}/></div>}
         </div>
         <div className="preview-foot">
-          <button className="outline" onClick={()=>downloadMaterial(preview)}><Download size={14}/>ダウンロード</button>
-          <button className="pink" onClick={() => setPreview(null)}>閉じる</button>
+          <button className="outline" onClick={()=>downloadMaterial(preview)}><Download size={14}/><Bi jp="ダウンロード" vi="Tải xuống" profile={profile}/></button>
+          <button className="pink" onClick={() => setPreview(null)}><Bi jp="閉じる" vi="Đóng" profile={profile}/></button>
         </div>
       </div>
     </div>}

@@ -9,15 +9,16 @@ export function RegisterPage({ nav }) {
   async function submit(e){
     e.preventDefault();
     const data = new FormData(e.currentTarget);
-    const name = data.get('name');
-    const email = data.get('email');
-    const password = data.get('password');
-    if(!name || !email || !password) return setMessage('必須項目を入力してください。');
+    const name = String(data.get('name') || '').trim();
+    const email = String(data.get('email') || '').trim();
+    const password = String(data.get('password') || '');
+    const confirmPassword = String(data.get('confirmPassword') || '');
+    if(!name || !email || !password || !confirmPassword) return setMessage('必須項目を入力してください。');
+    if(password !== confirmPassword) return setMessage('パスワードが一致しません。');
 
     setLoading(true);
     setMessage('');
     try {
-      // username = email prefix hoặc name
       const username = email.split('@')[0];
       await apiRegister({ username, name, email, password });
       alert('登録しました。ログインしてください。');
@@ -52,9 +53,10 @@ export function RegisterPage({ nav }) {
     <form className="auth-card" onSubmit={submit}>
       <h2>新規アカウント作成</h2><label>名前</label><input name="name" placeholder="Tuệ先生" />
       <label>メール</label><input name="email" type="email" placeholder="teacher@example.com" />
-      <label>パスワード</label><input name="password" type="password" placeholder="6文字以上" />
+      <label>パスワード</label><input name="password" type="password" placeholder="8文字以上" />
+      <label>パスワード確認</label><input name="confirmPassword" type="password" placeholder="もう一度入力してください" />
       {message && <p className="error">{message}</p>}
-      <button className="pink full" disabled={loading}>{loading ? '登録中...' : '登録する'}</button><button type="button" className="link" onClick={() => nav('login')}>ログイン画面へ</button>
+      <button className="pink full auth-submit" disabled={loading}>{loading ? '登録中...' : '登録する'}</button><button type="button" className="link" onClick={() => nav('login')}>ログイン画面へ</button>
     </form>
   </div>
 }

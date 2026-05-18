@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { LoginPage } from './pages/LoginPage.jsx';
 import { RegisterPage } from './pages/RegisterPage.jsx';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage.jsx';
 import { DashboardPage } from './pages/DashboardPage.jsx';
 import { MySlidesPage } from './pages/MySlidesPage.jsx';
 import { SharedMaterialsPage } from './pages/SharedMaterialsPage.jsx';
@@ -43,6 +44,7 @@ function App() {
 
     if (route === 'login') return <LoginPage nav={nav} setProfile={setProfile} />;
     if (route === 'register') return <RegisterPage nav={nav} />;
+    if (route === 'forgot') return <ForgotPasswordPage nav={nav} />;
     if (route === 'dashboard') return <DashboardPage {...layoutProps} />;
     if (route === 'slides') return <MySlidesPage {...layoutProps} />;
     if (route === 'shared') return <SharedMaterialsPage {...layoutProps} />;
