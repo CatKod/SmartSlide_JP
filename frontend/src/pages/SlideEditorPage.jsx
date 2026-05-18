@@ -1,0 +1,769 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AppLayout } from '../components/Layout.jsx';
+import { cloneSlides, defaultSlides, templates } from '../data/mockData.js';
+import { getAllTemplates } from '../data/uploadedTemplates.js';
+import { ImagePlus, Save, Type, Upload, Plus, Trash2, Download, Play, X } from 'lucide-react';
+import { Bi, biText } from '../i18n.jsx';
+
+const TEXT_PLACEHOLDER = 'ここにテキストを入力してください';
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=900&auto=format&fit=crop';
+
+const COLOR_PALETTE = [
+  { title: '自動 / Tự động', colors: ['#201827'] },
+  { title: 'テーマカラー / Màu chủ đề', colors: ['#000000','#444444','#777777','#0f172a','#155e75','#ea580c','#166534','#0ea5e9','#a21caf','#4ade80'] },
+  { title: '標準カラー / Màu chuẩn', colors: ['#dc2626','#ef4444','#f59e0b','#facc15','#84cc16','#22c55e','#06b6d4','#2563eb','#1e3a8a','#7c3aed'] },
+  { title: '淡い色 / Màu nhạt', colors: ['#fecaca','#fed7aa','#fef3c7','#d9f99d','#bbf7d0','#bae6fd','#bfdbfe','#ddd6fe','#fbcfe8','#e5e7eb'] },
+];
+
+
+function createTitleElement(title, index = 0) {
+  return {
+    id: `el_title_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 6)}`,
+    type: 'text',
+    isTitle: true,
+    x: 7,
+    y: 7,
+    w: 72,
+    h: 12,
+    content: title || '無題のスライド',
+    bold: true,
+    italic: false,
+    underline: false,
+    fontSize: 32,
+    align: 'left',
+    color: '#201827',
+  };
+}
+
+function ensureTitleElement(slide, elements, index = 0) {
+  const slideTitle = slide.title || '無題のスライド';
+  const titleIndex = elements.findIndex(el =>
+    el.isTitle ||
+    (el.type === 'text' && String(el.content || '').trim() === String(slideTitle).trim() && Number(el.x) <= 14 && Number(el.y) <= 24)
+  );
+  if (titleIndex >= 0) {
+    return elements.map((el, i) => i === titleIndex ? {
+      ...createTitleElement(slideTitle, index),
+      ...el,
+      isTitle: true,
+      content: el.content || slideTitle,
+      bold: el.bold ?? true,
+      fontSize: el.fontSize || 32,
+    } : el);
+  }
+  return [createTitleElement(slideTitle, index), ...elements];
+}
+
+function createBlankSlides() {
+  return [{
+    id: `s_blank_${Date.now()}`,
+    title: 'こんにちは',
+    elements: [{
+      id: `el_text_konnichiwa_${Date.now()}`,
+      type: 'text',
+      isTitle: true,
+      x: 7,
+      y: 7,
+      w: 72,
+      h: 12,
+      content: 'こんにちは',
+      bold: true,
+      italic: false,
+      underline: false,
+      fontSize: 32,
+      align: 'left',
+      color: '#201827',
+    }],
+  }];
+}
+
+function loadSavedDeck(deckId) {
+  if (!deckId) return null;
+  const decks = JSON.parse(localStorage.getItem('smartslide_saved_decks') || '[]');
+  return decks.find(deck => deck.id === deckId) || null;
+}
+
+function normalizeSlide(slide, index = 0) {
+  if (slide.elements) {
+    const normalizedElements = slide.elements.map((el, elIndex) => ({
+      fontSize: 18,
+      align: 'left',
+      bold: false,
+      italic: false,
+      underline: false,
+      color: '#201827',
+      ...el,
+      id: el.id || `el_${Date.now()}_${index}_${elIndex}`,
+    }));
+    return {
+      ...slide,
+      backgroundImage: slide.backgroundImage || '',
+      elements: ensureTitleElement(slide, normalizedElements, index),
+    };
+  }
+  const elements = [];
+  if (slide.body) {
+    elements.push({
+      id: `el_text_${Date.now()}_${index}`,
+      type: 'text',
+      x: 8,
+      y: 24,
+      w: 72,
+      h: 22,
+      content: slide.body,
+      bold: false,
+      italic: false,
+      underline: false,
+      fontSize: 18,
+      align: 'left',
+      color: '#201827',
+    });
+  }
+  if (slide.image) {
+    elements.push({
+      id: `el_img_${Date.now()}_${index}`,
+      type: 'image',
+      x: 8,
+      y: 50,
+      w: 55,
+      h: 34,
+      src: slide.image,
+    });
+  }
+  return { ...slide, backgroundImage: slide.backgroundImage || '', elements: ensureTitleElement(slide, elements, index), body: '', image: '' };
+}
+
+function normalizeSlides(slides) {
+  return slides.map((slide, index) => normalizeSlide(slide, index));
+}
+
+
+function SlideView({ slide, className = '' }) {
+  if (!slide) return null;
+  return <div
+    className={`presentation-slide ${className} ${slide.backgroundImage ? 'has-slide-background' : ''}`}
+    style={slide.backgroundImage ? { backgroundImage: `linear-gradient(rgba(255,255,255,.18), rgba(255,255,255,.18)), url(${slide.backgroundImage})` } : undefined}
+  >
+    {(slide.elements || []).map(el => <div
+      key={el.id}
+      className={`presentation-element ${el.type === 'text' ? 'text-element' : 'image-element'}`}
+      style={{ left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%` }}
+    >
+      {el.type === 'text' ? <div
+        className="presentation-text"
+        style={{
+          fontWeight: el.bold ? 800 : 400,
+          fontStyle: el.italic ? 'italic' : 'normal',
+          textDecoration: el.underline ? 'underline' : 'none',
+          fontSize: `${el.fontSize || 18}px`,
+          textAlign: el.align || 'left',
+          color: el.color || '#201827',
+        }}
+      >{el.content}</div> : <img src={el.src || DEFAULT_IMAGE} alt="slide" />}
+    </div>)}
+  </div>;
+}
+
+function PresentationOverlay({ slides, index, setIndex, close }) {
+  const currentSlide = slides[index] || slides[0];
+  function handleClick(e) {
+    if (e.target.closest('.presentation-exit')) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const isRight = e.clientX > rect.left + rect.width / 2;
+    setIndex(prev => isRight ? Math.min(slides.length - 1, prev + 1) : Math.max(0, prev - 1));
+  }
+  return <div className="presentation-overlay" onClick={handleClick}>
+    <SlideView slide={currentSlide} />
+    <div className="presentation-counter">{index + 1} / {slides.length}</div>
+    <button className="presentation-exit" onClick={close}><X size={18}/> 終了</button>
+  </div>;
+}
+
+export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }) {
+  const allTemplates = getAllTemplates(templates);
+  const template = templateId ? allTemplates.find(t => t.id === templateId) : null;
+  const savedDeck = useMemo(() => loadSavedDeck(deckId), [deckId]);
+  const [currentDeckId, setCurrentDeckId] = useState(deckId || null);
+  const [slides, setSlides] = useState(() => normalizeSlides(savedDeck ? savedDeck.slides : (template ? cloneSlides(template.slidesData) : createBlankSlides())));
+  const [active, setActive] = useState(0);
+  const [selectedId, setSelectedId] = useState(null);
+  const [notice, setNotice] = useState('');
+  const [exportFormat, setExportFormat] = useState('pdf');
+  const [presenting, setPresenting] = useState(false);
+  const [colorPaletteOpen, setColorPaletteOpen] = useState(false);
+  const [presentationIndex, setPresentationIndex] = useState(0);
+  const fileInputRef = useRef(null);
+  const canvasRef = useRef(null);
+  const dragRef = useRef(null);
+  const resizeRef = useRef(null);
+  const slideDragRef = useRef(null);
+
+  useEffect(() => {
+    const deck = loadSavedDeck(deckId);
+    setCurrentDeckId(deckId || null);
+    setSlides(normalizeSlides(deck ? deck.slides : (template ? cloneSlides(template.slidesData) : createBlankSlides())));
+    setActive(0);
+    setSelectedId(null);
+    setNotice('');
+  }, [deckId, templateId]);
+
+  useEffect(() => {
+    function move(e) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const drag = dragRef.current;
+      if (drag) {
+        const nextX = ((e.clientX - rect.left - drag.offsetX) / rect.width) * 100;
+        const nextY = ((e.clientY - rect.top - drag.offsetY) / rect.height) * 100;
+        updateElement(drag.id, {
+          x: Math.max(0, Math.min(100 - drag.w, nextX)),
+          y: Math.max(0, Math.min(100 - drag.h, nextY)),
+        });
+      }
+      const resize = resizeRef.current;
+      if (resize) {
+        const dx = ((e.clientX - resize.startX) / rect.width) * 100;
+        const dy = ((e.clientY - resize.startY) / rect.height) * 100;
+        updateElement(resize.id, {
+          w: Math.max(8, Math.min(100 - resize.x, resize.w + dx)),
+          h: Math.max(6, Math.min(100 - resize.y, resize.h + dy)),
+        });
+      }
+    }
+    function up() { dragRef.current = null; resizeRef.current = null; }
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+    return () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+  }, [active]);
+
+  useEffect(() => {
+    function keydown(e) {
+      if (!selectedId) return;
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      const isTyping = tag === 'textarea' || tag === 'input';
+      if (!isTyping && (e.key === 'Delete' || e.key === 'Backspace')) {
+        e.preventDefault();
+        deleteSelected();
+      }
+    }
+    window.addEventListener('keydown', keydown);
+    return () => window.removeEventListener('keydown', keydown);
+  }, [selectedId, active]);
+
+  useEffect(() => {
+    if (!presenting) return;
+    function keydown(e) {
+      if (e.key === 'Escape') {
+        setPresenting(false);
+        return;
+      }
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+        e.preventDefault();
+        setPresentationIndex(index => Math.min(slides.length - 1, index + 1));
+      }
+      if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        setPresentationIndex(index => Math.max(0, index - 1));
+      }
+    }
+    function fullscreenChange() {
+      if (!document.fullscreenElement) setPresenting(false);
+    }
+    document.addEventListener('fullscreenchange', fullscreenChange);
+    window.addEventListener('keydown', keydown);
+    return () => {
+      window.removeEventListener('keydown', keydown);
+      document.removeEventListener('fullscreenchange', fullscreenChange);
+    };
+  }, [presenting, slides.length]);
+
+  const current = slides[active] || slides[0];
+  const selectedElement = current?.elements?.find(el => el.id === selectedId) || null;
+
+  function updateSlide(field, value) {
+    setSlides(s => s.map((slide, i) => i === active ? { ...slide, [field]: value } : slide));
+  }
+
+  function updateElement(id, patch) {
+    setSlides(s => s.map((slide, i) => {
+      if (i !== active) return slide;
+      let nextTitle = slide.title;
+      const nextElements = (slide.elements || []).map(el => {
+        if (el.id !== id) return el;
+        const nextEl = { ...el, ...patch };
+        if (nextEl.isTitle && Object.prototype.hasOwnProperty.call(patch, 'content')) {
+          nextTitle = patch.content || '無題のスライド';
+        }
+        return nextEl;
+      });
+      return { ...slide, title: nextTitle, elements: nextElements };
+    }));
+  }
+
+  function addSlide() {
+    const next = {
+      id: `s_${Date.now()}`,
+      title: '新しいスライド',
+      elements: [createTitleElement('新しいスライド')],
+    };
+    setSlides(s => [...s, next]);
+    setActive(slides.length);
+    setSelectedId(next.elements[0].id);
+  }
+
+  function deleteSlide(index = active) {
+    if (slides.length <= 1) {
+      setNotice('スライドは少なくとも1枚必要です。');
+      return;
+    }
+    setSlides(prev => prev.filter((_, i) => i !== index));
+    setActive(prev => {
+      if (index < prev) return prev - 1;
+      if (index === prev) return Math.max(0, Math.min(prev, slides.length - 2));
+      return prev;
+    });
+    setSelectedId(null);
+    setNotice('スライドを削除しました。スライド番号を更新しました。');
+  }
+
+  function reorderSlides(from, to) {
+    if (from === null || from === undefined || to === null || to === undefined || from === to) return;
+    if (from < 0 || to < 0 || from >= slides.length || to >= slides.length) return;
+    setSlides(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+    setActive(prev => {
+      if (prev === from) return to;
+      if (from < prev && to >= prev) return prev - 1;
+      if (from > prev && to <= prev) return prev + 1;
+      return prev;
+    });
+    setSelectedId(null);
+    setNotice('スライドの順番を変更しました。番号は上から順に更新されます。');
+  }
+
+  function addText() {
+    const id = `el_text_${Date.now()}`;
+    const el = { id, type: 'text', x: 12, y: 30, w: 45, h: 16, content: TEXT_PLACEHOLDER, bold: false, italic: false, underline: false, fontSize: 18, align: 'left', color: '#201827' };
+    updateSlide('elements', [...(current.elements || []), el]);
+    setSelectedId(id);
+    setNotice('テキストボックスを追加しました。ドラッグして位置を変更できます。');
+  }
+
+  function appendImage(src) {
+    if (!src) return;
+    const id = `el_img_${Date.now()}`;
+    const count = (current.elements || []).filter(el => el.type === 'image').length;
+    const el = { id, type: 'image', x: 10 + (count % 4) * 4, y: 48 + (count % 3) * 4, w: 42, h: 30, src };
+    updateSlide('elements', [...(current.elements || []), el]);
+    setSelectedId(id);
+    setNotice('画像を追加しました。複数の画像を自由に配置できます。');
+  }
+
+  function addImageByUrl() {
+    const url = window.prompt('画像リンクを入力してください。例：https://...');
+    appendImage(url);
+  }
+
+  function uploadImage(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => appendImage(String(reader.result));
+    reader.readAsDataURL(file);
+  }
+
+  function toggleFormat(key) {
+    if (!selectedElement || selectedElement.type !== 'text') {
+      setNotice('先にテキストボックスを選択してください。');
+      return;
+    }
+    updateElement(selectedElement.id, { [key]: !selectedElement[key] });
+  }
+
+  function setTextFormat(patch) {
+    if (!selectedElement || selectedElement.type !== 'text') {
+      setNotice('先にテキストボックスを選択してください。');
+      return;
+    }
+    updateElement(selectedElement.id, patch);
+  }
+
+  function applyTextColor(color) {
+    setTextFormat({ color });
+    setColorPaletteOpen(false);
+    setNotice('文字色を変更しました。');
+  }
+
+  function deleteSelected() {
+    if (!selectedId) {
+      setNotice('削除するテキストまたは画像を選択してください。');
+      return;
+    }
+    if (selectedElement?.isTitle) {
+      setNotice('タイトルは削除できません。内容、色、サイズ、位置は自由に変更できます。');
+      return;
+    }
+    setSlides(s => s.map((slide, i) => i !== active ? slide : {
+      ...slide,
+      elements: (slide.elements || []).filter(el => el.id !== selectedId),
+    }));
+    setSelectedId(null);
+    setNotice('選択した要素を削除しました。');
+  }
+
+
+  function setSelectedImageAsBackground() {
+    if (!selectedElement || selectedElement.type !== 'image') {
+      setNotice('背景に設定する画像を選択してください。');
+      return;
+    }
+    const imageSrc = selectedElement.src || DEFAULT_IMAGE;
+    setSlides(s => s.map((slide, i) => i !== active ? slide : {
+      ...slide,
+      backgroundImage: imageSrc,
+      elements: (slide.elements || []).filter(el => el.id !== selectedElement.id),
+    }));
+    setSelectedId(null);
+    setNotice('選択した画像をこのスライドの背景に設定しました。');
+  }
+
+  function clearSlideBackground() {
+    updateSlide('backgroundImage', '');
+    setNotice('このスライドの背景画像を解除しました。');
+  }
+
+  function startResize(e, el) {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedId(el.id);
+    resizeRef.current = {
+      id: el.id,
+      x: el.x,
+      y: el.y,
+      w: el.w,
+      h: el.h,
+      startX: e.clientX,
+      startY: e.clientY,
+    };
+  }
+
+  function startDrag(e, el) {
+    if (e.target.tagName === 'TEXTAREA' || e.target.dataset.resize || e.target.dataset.delete) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    setSelectedId(el.id);
+    dragRef.current = {
+      id: el.id,
+      w: el.w,
+      h: el.h,
+      offsetX: e.clientX - rect.left - (el.x / 100) * rect.width,
+      offsetY: e.clientY - rect.top - (el.y / 100) * rect.height,
+    };
+  }
+
+  function startPresentation() {
+    setPresentationIndex(active);
+    setPresenting(true);
+    setTimeout(() => {
+      const node = document.querySelector('.presentation-overlay');
+      if (node?.requestFullscreen) node.requestFullscreen().catch(() => {});
+    }, 0);
+  }
+
+  function closePresentation() {
+    setPresenting(false);
+    if (document.fullscreenElement && document.exitFullscreen) {
+      document.exitFullscreen().catch(() => {});
+    }
+  }
+
+  function save() {
+    const existing = JSON.parse(localStorage.getItem('smartslide_saved_decks') || '[]');
+    const id = currentDeckId || `deck_${Date.now()}`;
+    const deck = {
+      id,
+      title: slides[0]?.title || '無題のスライド',
+      slides,
+      templateId: template?.id || null,
+      updatedAt: new Date().toLocaleString('ja-JP'),
+    };
+    const exists = existing.some(d => d.id === id);
+    const next = exists ? existing.map(d => d.id === id ? deck : d) : [deck, ...existing];
+    localStorage.setItem('smartslide_saved_decks', JSON.stringify(next.slice(0, 20)));
+    setCurrentDeckId(id);
+    setNotice(exists ? '既存のスライドを更新しました。' : '新しいスライドとして保存しました。');
+  }
+
+
+  async function waitForImages(node) {
+    const images = Array.from(node.querySelectorAll('img'));
+    await Promise.all(images.map(img => new Promise(resolve => {
+      if (img.complete) return resolve();
+      img.onload = resolve;
+      img.onerror = resolve;
+    })));
+  }
+
+  function createExportSlideNode(slide) {
+    const node = document.createElement('div');
+    node.className = 'export-slide-node';
+    node.style.cssText = 'position:fixed;left:-10000px;top:0;width:1280px;height:720px;background:white;overflow:hidden;border:1px solid #eee;font-family:Inter, Noto Sans JP, Arial, sans-serif;';
+
+    if (slide.backgroundImage) {
+      const bg = document.createElement('img');
+      bg.src = slide.backgroundImage;
+      bg.crossOrigin = 'anonymous';
+      bg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:1;z-index:0;';
+      node.appendChild(bg);
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:absolute;inset:0;background:rgba(255,255,255,.18);z-index:0;';
+      node.appendChild(overlay);
+    }
+
+
+    (slide.elements || []).forEach(el => {
+      const box = document.createElement('div');
+      box.style.cssText = `position:absolute;left:${el.x}%;top:${el.y}%;width:${el.w}%;height:${el.h}%;overflow:hidden;border-radius:14px;z-index:2;`;
+      if (el.type === 'text') {
+        box.textContent = el.content || '';
+        box.style.fontSize = `${Math.max(10, Number(el.fontSize || 18)) * 1.35}px`;
+        box.style.fontWeight = el.bold ? '800' : '400';
+        box.style.fontStyle = el.italic ? 'italic' : 'normal';
+        box.style.textDecoration = el.underline ? 'underline' : 'none';
+        box.style.textAlign = el.align || 'left';
+        box.style.lineHeight = '1.55';
+        box.style.padding = '14px';
+        box.style.whiteSpace = 'pre-wrap';
+        box.style.color = el.color || '#201827';
+        box.style.background = '#ffffffd9';
+        box.style.border = '1px solid #eadce5';
+      } else if (el.type === 'image') {
+        const image = document.createElement('img');
+        image.src = el.src || DEFAULT_IMAGE;
+        image.crossOrigin = 'anonymous';
+        image.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;border-radius:14px;';
+        box.appendChild(image);
+      }
+      node.appendChild(box);
+    });
+    document.body.appendChild(node);
+    return node;
+  }
+
+  async function renderSlideToImage(slide) {
+    const html2canvas = (await import('html2canvas')).default;
+    const node = createExportSlideNode(slide);
+    try {
+      await waitForImages(node);
+      const canvas = await html2canvas(node, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        imageTimeout: 3000,
+        logging: false,
+      });
+      return canvas.toDataURL('image/png');
+    } finally {
+      node.remove();
+    }
+  }
+
+  async function exportDeck() {
+    try {
+      setNotice(exportFormat === 'pdf' ? 'PDFを作成しています...' : 'PowerPointを作成しています...');
+      const title = (slides[0]?.title || 'SmartSlide').replace(/[\\/:*?"<>|]/g, '_');
+      const slideImages = [];
+      for (const slide of slides) {
+        slideImages.push(await renderSlideToImage(slide));
+      }
+
+      if (exportFormat === 'pdf') {
+        const { jsPDF } = await import('jspdf');
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        slideImages.forEach((image, index) => {
+          if (index > 0) pdf.addPage('a4', 'landscape');
+          pdf.addImage(image, 'PNG', 0, 0, 297, 210);
+        });
+        pdf.save(`${title}.pdf`);
+        setNotice('PDFをダウンロードしました。');
+        return;
+      }
+
+      const pptxgenModule = await import('pptxgenjs');
+      const pptxgen = pptxgenModule.default || pptxgenModule;
+      const pptx = new pptxgen();
+      pptx.layout = 'LAYOUT_WIDE';
+      pptx.author = profile?.name || 'SmartSlide JP';
+      pptx.subject = 'SmartSlide JP exported slide deck';
+      pptx.title = slides[0]?.title || 'SmartSlide JP';
+      slideImages.forEach(image => {
+        const pptSlide = pptx.addSlide();
+        pptSlide.background = { color: 'FFFFFF' };
+        pptSlide.addImage({ data: image, x: 0, y: 0, w: 13.333, h: 7.5 });
+      });
+      await pptx.writeFile({ fileName: `${title}.pptx` });
+      setNotice('PowerPointをダウンロードしました。');
+    } catch (error) {
+      console.error(error);
+      setNotice('出力に失敗しました。画像URLが外部サイトの場合は、画像アップロードを使うと安定します。');
+    }
+  }
+
+  if (!current) return null;
+
+  return <AppLayout nav={nav} active="slides" profile={profile} setProfile={setProfile} compactSidebar>
+    <section className="editor">
+      <aside className="slide-list">
+        <button className="outline full" onClick={addSlide}><Plus size={15}/><Bi jp="スライド追加" vi="Thêm slide" profile={profile}/></button>
+        <p className="slide-order-hint"><Bi jp="スライドをドラッグして順番を変更できます。不要なページはゴミ箱で削除できます。" vi="Kéo slide để đổi thứ tự. Có thể xóa trang không cần bằng biểu tượng thùng rác." profile={profile}/></p>
+        {slides.map((s, i) => <div
+          key={s.id}
+          className={i === active ? 'thumb active' : 'thumb'}
+          draggable
+          onClick={() => { setActive(i); setSelectedId(null); }}
+          onDragStart={e => { slideDragRef.current = i; e.dataTransfer.effectAllowed = 'move'; }}
+          onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
+          onDrop={e => { e.preventDefault(); reorderSlides(slideDragRef.current, i); slideDragRef.current = null; }}
+          onDragEnd={() => { slideDragRef.current = null; }}
+          title="ドラッグして順番を変更"
+        >
+          <span>{i + 1}</span>
+          <b>{s.title}</b>
+          <button
+            className="slide-delete-btn"
+            title="このスライドを削除"
+            onClick={e => { e.stopPropagation(); deleteSlide(i); }}
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>)}
+      </aside>
+      <main className="canvas-wrap">
+        <div className="editor-toolbar">
+          <button onClick={addText}><Type size={16}/><Bi jp="テキスト追加" vi="Thêm văn bản" profile={profile}/></button>
+          <button onClick={addImageByUrl}><ImagePlus size={16}/><Bi jp="画像リンク" vi="Link ảnh" profile={profile}/></button>
+          <button onClick={() => fileInputRef.current?.click()}><Upload size={16}/><Bi jp="画像アップロード" vi="Tải ảnh lên" profile={profile}/></button>
+          <button className="icon-tool" onClick={deleteSelected} disabled={!selectedElement}><Trash2 size={16}/><Bi jp="削除" vi="Xóa" profile={profile}/></button>
+          <button className={selectedElement?.bold ? 'active-tool format-one' : 'format-one'} onClick={() => toggleFormat('bold')} disabled={selectedElement?.type !== 'text'}><b>B</b></button>
+          <button className={selectedElement?.italic ? 'active-tool format-one' : 'format-one'} onClick={() => toggleFormat('italic')} disabled={selectedElement?.type !== 'text'}><i>I</i></button>
+          <button className={selectedElement?.underline ? 'active-tool format-one' : 'format-one'} onClick={() => toggleFormat('underline')} disabled={selectedElement?.type !== 'text'}><u>U</u></button>
+          <select className="font-size-select" value={selectedElement?.fontSize || 18} onChange={e => setTextFormat({ fontSize: Number(e.target.value) })} disabled={selectedElement?.type !== 'text'}>
+            {[10,11,12,14,16,18,20,22,24,26,28,32,36,40,44,48,56,64].map(size => <option key={size} value={size}>{size}</option>)}
+          </select>
+          <div className="color-tool-wrap">
+            <button
+              type="button"
+              className="text-color-tool palette-toggle"
+              title="文字色 / Màu chữ"
+              disabled={selectedElement?.type !== 'text'}
+              onClick={() => {
+                if (selectedElement?.type !== 'text') return setNotice('先にテキストボックスを選択してください。');
+                setColorPaletteOpen(open => !open);
+              }}
+            >
+              <span style={{ color: selectedElement?.color || '#201827' }}>A</span>
+              <b className="color-preview" style={{ backgroundColor: selectedElement?.color || '#201827' }}></b>
+            </button>
+            {colorPaletteOpen && selectedElement?.type === 'text' && <div className="color-palette-panel">
+              {COLOR_PALETTE.map(group => <div className="color-group" key={group.title}>
+                <p>{group.title}</p>
+                <div className="color-grid">
+                  {group.colors.map(color => <button
+                    key={color}
+                    className={color.toLowerCase() === (selectedElement?.color || '').toLowerCase() ? 'color-swatch selected' : 'color-swatch'}
+                    style={{ backgroundColor: color }}
+                    title={color}
+                    onClick={() => applyTextColor(color)}
+                  />)}
+                </div>
+              </div>)}
+              <div className="custom-color-row">
+                <label>
+                  その他の色 / Màu khác
+                  <input type="color" value={selectedElement?.color || '#201827'} onChange={e => applyTextColor(e.target.value)} />
+                </label>
+              </div>
+            </div>}
+          </div>
+          <button className={selectedElement?.align === 'left' ? 'active-tool align-tool' : 'align-tool'} onClick={() => setTextFormat({ align: 'left' })} disabled={selectedElement?.type !== 'text'}>左</button>
+          <button className={selectedElement?.align === 'center' ? 'active-tool align-tool' : 'align-tool'} onClick={() => setTextFormat({ align: 'center' })} disabled={selectedElement?.type !== 'text'}>中</button>
+          <button className={selectedElement?.align === 'right' ? 'active-tool align-tool' : 'align-tool'} onClick={() => setTextFormat({ align: 'right' })} disabled={selectedElement?.type !== 'text'}>右</button>
+          <button onClick={save}><Save size={16}/><Bi jp="保存" vi="Lưu" profile={profile}/></button>
+          <button onClick={() => nav('slides')}><Bi jp="マイスライドへ" vi="Về slide của tôi" profile={profile}/></button>
+          <button className="presentation-btn" onClick={startPresentation}><Play size={16}/><Bi jp="プレゼン" vi="Trình chiếu" profile={profile}/></button>
+          <div className="export-tools">
+            <select value={exportFormat} onChange={e => setExportFormat(e.target.value)} aria-label="出力形式">
+              <option value="pdf">PDF</option>
+              <option value="pptx">PPTX</option>
+            </select>
+            <button className="download-deck" onClick={exportDeck}><Download size={16}/><Bi jp="スライド出力" vi="Xuất slide" profile={profile}/></button>
+          </div>
+          <input ref={fileInputRef} className="hidden-file" type="file" accept="image/*" onChange={uploadImage} />
+        </div>
+        {notice && <div className="notice">{notice}</div>}
+        <div
+          className={`design-canvas ${current.backgroundImage ? 'has-slide-background' : ''}`}
+          ref={canvasRef}
+          style={current.backgroundImage ? { backgroundImage: `linear-gradient(rgba(255,255,255,.18), rgba(255,255,255,.18)), url(${current.backgroundImage})` } : undefined}
+          onMouseDown={() => setSelectedId(null)}
+        >
+          {(current.elements || []).map(el => <div
+            key={el.id}
+            className={`design-element ${el.type === 'text' ? 'text-element' : 'image-element'} ${selectedId === el.id ? 'selected' : ''}`}
+            style={{ left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%` }}
+            onMouseDown={e => { e.stopPropagation(); startDrag(e, el); }}
+            onClick={e => { e.stopPropagation(); setSelectedId(el.id); }}
+          >
+            {el.type === 'text' ? <textarea
+              value={el.content}
+              onChange={e => updateElement(el.id, { content: e.target.value })}
+              style={{
+                fontWeight: el.bold ? 800 : 400,
+                fontStyle: el.italic ? 'italic' : 'normal',
+                textDecoration: el.underline ? 'underline' : 'none',
+                fontSize: `${el.fontSize || 18}px`,
+                textAlign: el.align || 'left',
+                color: el.color || '#201827',
+              }}
+              onMouseDown={e => e.stopPropagation()}
+              onFocus={() => setSelectedId(el.id)}
+            /> : <img src={el.src || DEFAULT_IMAGE} alt="挿入画像" draggable="false" />}
+            {selectedId === el.id && !el.isTitle && <button className="element-delete" data-delete="1" onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); deleteSelected(); }}>×</button>}
+            {selectedId === el.id && <span className="resize-handle" data-resize="1" onMouseDown={e => startResize(e, el)} />}
+          </div>)}
+        </div>
+      </main>
+      <aside className="property-panel">
+        <h3><Bi jp="プロパティ" vi="Thuộc tính" profile={profile}/></h3>
+        {selectedElement ? <>
+          <p className="selected-label"><Bi jp={`選択中：${selectedElement.isTitle ? 'タイトル' : selectedElement.type === 'text' ? 'テキスト' : '画像'}`} vi={`Đang chọn: ${selectedElement.isTitle ? 'Tiêu đề' : selectedElement.type === 'text' ? 'Văn bản' : 'Hình ảnh'}`} profile={profile}/></p>
+          <button className="outline full danger-action" onClick={deleteSelected} disabled={selectedElement.isTitle}><Trash2 size={15}/><Bi jp={selectedElement.isTitle ? 'タイトルは削除不可' : '選択中の要素を削除'} vi={selectedElement.isTitle ? 'Không thể xóa tiêu đề' : 'Xóa đối tượng đang chọn'} profile={profile}/></button>
+          {selectedElement.type === 'image' && <><label><Bi jp="画像リンク" vi="Link ảnh" profile={profile}/></label><input value={selectedElement.src || ''} onChange={e => updateElement(selectedElement.id, { src: e.target.value })} placeholder="https://..." /></>}
+          {selectedElement.type === 'text' && <><label><Bi jp="テキスト内容" vi="Nội dung văn bản" profile={profile}/></label><textarea value={selectedElement.content || ''} onChange={e => updateElement(selectedElement.id, { content: e.target.value })} /><label><Bi jp="文字サイズ" vi="Cỡ chữ" profile={profile}/></label><input type="number" min="10" max="96" value={selectedElement.fontSize || 18} onChange={e => updateElement(selectedElement.id, { fontSize: Number(e.target.value) })} /><label><Bi jp="文字色" vi="Màu chữ" profile={profile}/></label><input type="color" className="property-color" value={selectedElement.color || '#201827'} onChange={e => updateElement(selectedElement.id, { color: e.target.value })} /><label><Bi jp="文字揃え" vi="Căn lề chữ" profile={profile}/></label><select className="property-select" value={selectedElement.align || 'left'} onChange={e => updateElement(selectedElement.id, { align: e.target.value })}><option value="left">左揃え</option><option value="center">中央揃え</option><option value="right">右揃え</option></select></>}
+          <label><Bi jp="位置・サイズ" vi="Vị trí và kích thước" profile={profile}/></label><p className="hint"><Bi jp="ドラッグで移動、右下の丸いハンドルで拡大・縮小できます。" vi="Kéo để di chuyển, kéo nút tròn góc phải dưới để phóng to/thu nhỏ." profile={profile}/></p>
+        </> : <p className="hint"><Bi jp="テキストまたは画像をクリックして編集します。" vi="Bấm vào văn bản hoặc hình ảnh để chỉnh sửa." profile={profile}/></p>}
+        <label><Bi jp="メモ" vi="Ghi chú" profile={profile}/></label><textarea placeholder="発表者ノート" />
+        {selectedElement?.type === 'image' && <button className="pink full background-action" onClick={setSelectedImageAsBackground}><Bi jp="この画像を背景に設定" vi="Đặt hình ảnh này làm hình nền" profile={profile}/></button>}
+        {current.backgroundImage && <button className="outline full background-action" onClick={clearSlideBackground}><Bi jp="背景画像を解除" vi="Gỡ hình nền" profile={profile}/></button>}
+      </aside>
+
+      {presenting && <PresentationOverlay
+        slides={slides}
+        index={presentationIndex}
+        setIndex={setPresentationIndex}
+        close={closePresentation}
+      />}
+    </section>
+  </AppLayout>;
+}
