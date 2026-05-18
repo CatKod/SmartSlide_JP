@@ -112,6 +112,59 @@ router.post('/blank', auth, async (req, res) => {
   }
 });
 
+const { uploadMaterial } = require('../middleware/upload');
+
+/**
+ * POST /api/slides/import
+ * Task ID 14: Logic parse file và convert sang data slide
+ */
+router.post('/import', auth, uploadMaterial.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'ファイルが見つかりません (No file found)' });
+    }
+
+    // Logic giả lập parse file và tạo slide từ nội dung (PDF/PPTX -> JSON)
+    const presentation = new Presentation({
+      owner_id: req.userId,
+      title: req.file.originalname || 'Imported Slide',
+      templateId: null,
+      slides: [
+        {
+          id: `s1_${Date.now()}`,
+          title: `Trích xuất từ: ${req.file.originalname}`,
+          body: 'Đang hiển thị dữ liệu text giả lập được bóc tách từ file...',
+          image: '',
+          backgroundImage: '',
+          elements: [
+            {
+               id: `e_${Date.now()}`,
+               type: 'text',
+               content: 'Nội dung trích xuất tự động...',
+               x: 10, y: 10, width: 80, height: 20
+            }
+          ],
+        },
+      ],
+    });
+
+    await presentation.save();
+
+    await ActivityLog.create({
+      user_id: req.userId,
+      action: 'create_presentation',
+      target_type: 'presentation',
+      target_id: presentation._id,
+      details: { title: presentation.title, fileName: req.file.originalname, imported: true },
+    });
+
+    res.status(201).json({ slide: presentation });
+  } catch (err) {
+    console.error('Import error:', err);
+    res.status(500).json({ error: 'サーバーエラー' });
+  }
+});
+
 /**
  * POST /api/slides/from-template/:templateId
  * Tạo presentation mới từ template
@@ -261,6 +314,120 @@ router.delete('/:id', auth, async (req, res) => {
 
     res.json({ message: 'スライドを削除しました (Slide deleted)' });
   } catch (err) {
+    res.status(500).json({ error: 'サーバーエラー' });
+  }
+});
+
+/**
+ * POST /api/slides/:id/clone
+ * Task ID 6: 複製 (Clone) presentation
+ */
+router.post('/:id/clone', auth, async (req, res) => {
+  try {
+    const original = await Presentation.findOne({
+      _id: req.params.id,
+      owner_id: req.userId,
+    });
+
+    if (!original) {
+      return res.status(404).json({ error: 'スライドが見つかりません' });
+    }
+
+    const cloneData = {
+      owner_id: req.userId,
+      title: `${original.title} - Copy`,
+      templateId: original.templateId,
+      // Map lại id cho slide trang để tránh trùng lặp id ở clone
+      slides: original.slides.map(s => {
+        const sObj = s.toObject ? s.toObject() : s;
+        return {
+          ...sObj,
+          id: `s_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          elements: (sObj.elements || []).map(e => ({
+            ...e,
+            id: `e_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          }))
+        };
+      }),
+    };
+
+    const clone = new Presentation(cloneData);
+    await clone.save();
+
+    await ActivityLog.create({
+      user_id: req.userId,
+      action: 'clone_presentation',
+      target_type: 'presentation',
+      target_id: clone._id,
+      details: { title: clone.title, originalId: original._id },
+    });
+
+    res.status(201).json({ slide: clone });
+  } catch (err) {
+    res.status(500).json({ error: 'サーバーエラー' });
+  }
+});
+
+/**
+ * GET /api/slides/:id/export
+ * Task ID 18, 19: Export slide ra file PPTX (Sử dụng pptxgenjs nếu có)
+ */
+router.get('/:id/export', auth, async (req, res) => {
+  try {
+    const presentation = await Presentation.findOne({
+      _id: req.params.id,
+      owner_id: req.userId,
+    });
+
+    if (!presentation) {
+      return res.status(404).json({ error: 'スライドが見つかりません' });
+    }
+
+    const PptxGenJS = require('pptxgenjs');
+    const pptx = new PptxGenJS();
+    
+    if (presentation.slides && presentation.slides.length > 0) {
+      presentation.slides.forEach(slide => {
+        let slideObj = pptx.addSlide();
+        
+        // Add title
+        if (slide.title) {
+          slideObj.addText(slide.title, { x: 0.5, y: 0.5, w: '90%', h: 1, fontSize: 24, bold: true });
+        }
+
+        // Add body
+        if (slide.body) {
+          slideObj.addText(slide.body, { x: 0.5, y: 1.5, w: '90%', h: 3, fontSize: 18 });
+        }
+
+        // Add elements if any
+        if (slide.elements && slide.elements.length > 0) {
+          slide.elements.forEach(el => {
+            if (el.type === 'text') {
+              slideObj.addText(el.content || '', { 
+                x: (el.x / 100 * 10) || 1,
+                y: (el.y / 100 * 5.625) || 2,
+                w: (el.width / 100 * 10) || 4,
+                h: (el.height / 100 * 5.625) || 1,
+                fontSize: el.fontSize || 18,
+                color: el.color ? el.color.replace('#', '') : '000000'
+              });
+            }
+          });
+        }
+      });
+    } else {
+      pptx.addSlide().addText('No slides available', { x: 1, y: 1, w: 8, h: 2, fontSize: 24 });
+    }
+
+    const fileName = `${presentation.title || 'export'}.pptx`;
+    const data = await pptx.stream();
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
+    res.end(data);
+  } catch (err) {
+    console.error('Export PPTX error:', err);
     res.status(500).json({ error: 'サーバーエラー' });
   }
 });

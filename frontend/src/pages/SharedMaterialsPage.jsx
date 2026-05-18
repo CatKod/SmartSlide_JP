@@ -12,6 +12,7 @@ export function SharedMaterialsPage({ nav, profile }) {
   const [notice, setNotice] = useState('');
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [preview, setPreview] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {

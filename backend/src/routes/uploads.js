@@ -37,6 +37,27 @@ router.post('/images', auth, uploadImage.single('file'), async (req, res) => {
 });
 
 /**
+ * GET /api/uploads/images/search
+ * Task ID 10: Tìm kiếm hình ảnh (từ DB)
+ */
+router.get('/images/search', auth, async (req, res) => {
+  try {
+    const { q } = req.query;
+    
+    // Tìm kiếm trong DB (Assets)
+    const filter = { ownerId: req.userId };
+    if (q) {
+      const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.fileName = { $regex: escaped, $options: 'i' };
+    }
+    const assets = await Asset.find(filter).sort({ createdAt: -1 }).limit(20);
+    res.json({ images: assets });
+  } catch (err) {
+    res.status(500).json({ error: 'サーバーエラー' });
+  }
+});
+
+/**
  * POST /api/materials/upload
  * Upload tài liệu giảng dạy
  */
@@ -95,9 +116,24 @@ router.get('/materials', auth, async (req, res) => {
     if (level) filter.level = level;
     if (keyword && keyword.trim()) {
       const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.$and = [
+        {
+          $or: [
+            { title: { $regex: escaped, $options: 'i' } },
+            { ownerName: { $regex: escaped, $options: 'i' } },
+          ]
+        },
+        {
+          $or: [
+            { ownerId: req.userId },
+            { isShared: true }
+          ]
+        }
+      ];
+    } else {
       filter.$or = [
-        { title: { $regex: escaped, $options: 'i' } },
-        { ownerName: { $regex: escaped, $options: 'i' } },
+        { ownerId: req.userId },
+        { isShared: true }
       ];
     }
 
@@ -152,6 +188,31 @@ router.get('/materials/:id/download', auth, async (req, res) => {
     res.setHeader('Content-Type', material.mimeType || 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
     res.sendFile(filePath);
+  } catch (err) {
+    res.status(500).json({ error: 'サーバーエラー' });
+  }
+});
+
+/**
+ * PUT /api/materials/:id/share
+ * Task ID 22: Cập nhật trạng thái chia sẻ của tài liệu
+ */
+router.put('/materials/:id/share', auth, async (req, res) => {
+  try {
+    const { isShared } = req.body;
+    const material = await Material.findOne({
+      _id: req.params.id,
+      ownerId: req.userId // Chỉ chủ sở hữu mới được đổi trạng thái
+    });
+
+    if (!material) {
+      return res.status(404).json({ error: '資料が見つかりません' });
+    }
+
+    material.isShared = Boolean(isShared);
+    await material.save();
+
+    res.json({ message: '共有状態を更新しました', isShared: material.isShared });
   } catch (err) {
     res.status(500).json({ error: 'サーバーエラー' });
   }

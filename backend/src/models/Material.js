@@ -11,6 +11,7 @@ const materialSchema = new mongoose.Schema(
     previewUrl: { type: String },
     mimeType: { type: String },
     fileName: { type: String },
+    isShared: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

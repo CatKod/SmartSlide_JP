@@ -16,6 +16,13 @@ const uploadRoutes = require('./routes/uploads');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Tắt cache ETag để luôn trả về status 200
+app.set('etag', false);
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+
 // Kết nối MongoDB
 connectDB();
 
