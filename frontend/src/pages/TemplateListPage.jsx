@@ -19,8 +19,17 @@ export function TemplateListPage({ nav, initialKeyword = '', profile, setProfile
     const target = `${t.title} ${t.teacher} ${t.level} ${t.category} ${t.tags.join(' ')}`.toLowerCase();
     return (!keyword || target.includes(keyword.toLowerCase())) && (category === 'all' || t.category === category);
   }), [keyword, category, allTemplates]);
-  return <AppLayout nav={nav} active="templates" profile={profile} setProfile={setProfile}><section className="page-head"><h1><Bi jp="テンプレートを探す" vi="Tìm mẫu slide" profile={profile}/></h1><p><Bi jp="授業に合うテンプレートを検索してプレビューできます。" vi="Tìm và xem trước mẫu slide phù hợp với bài giảng." profile={profile}/></p></section>
-    <div className="filters"><input value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder={biText(profile, 'キーワードで検索', 'Tìm theo từ khóa')}/><select value={category} onChange={e=>setCategory(e.target.value)}>{[...templateCategories, { value: 'uploaded', label: 'アップロード' }].map(c => <option value={c.value} key={c.value}>{c.label}</option>)}</select></div>
+  return <AppLayout nav={nav} active="templates" profile={profile} setProfile={setProfile}>
+    <section className="page-head">
+      <h1><Bi jp="テンプレート一覧" vi="Danh sách mẫu" profile={profile}/></h1>
+      <p><Bi jp="カテゴリで絞り込みながらテンプレートを確認できます。" vi="Bạn có thể lọc mẫu theo danh mục và xem trước." profile={profile}/></p>
+    </section>
+    <div className="filters template-filters">
+      <input value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder={biText(profile, 'テンプレート名で検索...', 'Tìm theo tên mẫu...')}/>
+      <select value={category} onChange={e=>setCategory(e.target.value)}>
+        {[{ value: 'all', label: biText(profile, 'すべて', 'Tất cả') }, ...templateCategories, { value: 'uploaded', label: biText(profile, 'アップロード', 'Đã tải lên') }].map(c => <option value={c.value} key={c.value}>{c.label}</option>)}
+      </select>
+    </div>
     {filtered.length ? <div className="template-grid">{filtered.map(t => <TemplateCard key={t.id} template={t} profile={profile} onPreview={(id)=>nav('detail',{templateId:id})}/>)}</div> : <div className="empty"><Bi jp="該当なし" vi="Không có kết quả phù hợp" profile={profile}/></div>}
   </AppLayout>
 }

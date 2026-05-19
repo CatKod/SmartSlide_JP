@@ -6,6 +6,9 @@ frontend/node_modules/
 dist/
 frontend/dist/
 
+# Backend uploads
+backend/uploads/
+
 # Logs
 *.log
 npm-debug.log*

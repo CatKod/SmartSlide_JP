@@ -158,6 +158,12 @@ export function MySlidesPage({ nav, profile, setProfile }) {
     setVersion(v => v + 1);
   }
   function remove(id) {
+    if (!window.confirm(profile?.language === '日本語 + Tiếng Việt' ? 'このスライドを削除しますか？\nBạn có muốn xóa bài trình chiếu này không?' : 'このスライドを削除しますか？')) return;
+    if (id === 'demo') {
+      localStorage.removeItem('smartslide_saved_decks');
+      setVersion(v => v + 1);
+      return;
+    }
     persist(decks.filter(d => d.id !== id));
   }
   function copyDeck(deck) {
@@ -214,9 +220,9 @@ export function MySlidesPage({ nav, profile, setProfile }) {
         const imported = Array.isArray(data) ? data : [data];
         const normalized = imported.map((d, i) => ({ ...d, id: d.id || `import_${Date.now()}_${i}`, status: d.status || '保存済み', updatedAt: new Date().toLocaleString('ja-JP') }));
         persist([...normalized, ...decks]);
-        alert(profile?.language === '日本語 + Tiếng Việt' ? 'スライドをインポートしました。\nĐã import slide.' : 'スライドをインポートしました。');
+        alert(profile?.language === '日本語 + Tiếng Việt' ? 'スライドをインポートしました。\nĐã nhập bài trình chiếu.' : 'スライドをインポートしました。');
       } catch {
-        alert(profile?.language === '日本語 + Tiếng Việt' ? 'ファイル形式が正しくありません。\nFile không đúng định dạng.' : 'ファイル形式が正しくありません。');
+      alert(profile?.language === '日本語 + Tiếng Việt' ? 'ファイル形式が正しくありません。\nTệp không đúng định dạng.' : 'ファイル形式が正しくありません。');
       }
     };
     reader.readAsText(file);
@@ -225,17 +231,20 @@ export function MySlidesPage({ nav, profile, setProfile }) {
 
   return <AppLayout nav={nav} active="slides" profile={profile} setProfile={setProfile}>
     <section className="page-head split-head myslides-head">
-      <div><h1><Bi jp="マイスライド" vi="Slide của tôi" profile={profile}/></h1><p><Bi jp="作成・保存した教材スライドを管理できます。" vi="Quản lý các slide giáo án đã tạo và lưu." profile={profile}/></p></div>
+      <div>
+        <h1><Bi jp="マイスライド" vi="Bài trình chiếu của tôi" profile={profile}/></h1>
+        <p><Bi jp="作成・保存したプレゼンテーションを管理できます。" vi="Bạn có thể quản lý các bài thuyết trình đã tạo và lưu." profile={profile}/></p>
+      </div>
       <div className="myslides-head-actions">
         <input ref={importRef} type="file" accept=".json" hidden onChange={importSlides}/>
-        <button className="outline" onClick={() => importRef.current?.click()}><FileUp size={16}/><Bi jp="インポート" vi="Import" profile={profile}/></button>
-        <button className="outline" onClick={exportAll}><FileDown size={16}/><Bi jp="エクスポート" vi="Export" profile={profile}/></button>
-        <button className="pink" onClick={() => nav('editor', { deckId: null })}><Plus size={16}/><Bi jp="新規作成" vi="Tạo mới" profile={profile}/></button>
+        <button className="outline" onClick={() => importRef.current?.click()}><FileUp size={16}/><Bi jp="インポート" vi="Nhập dữ liệu" profile={profile}/></button>
+        <button className="outline" onClick={exportAll}><FileDown size={16}/><Bi jp="エクスポート" vi="Xuất dữ liệu" profile={profile}/></button>
+        <button className="pink" onClick={() => nav('editor', { deckId: null })}><Plus size={16}/><Bi jp="スライド作成" vi="Tạo bài trình chiếu" profile={profile}/></button>
       </div>
     </section>
 
     <section className="myslides-controls">
-      <div className="myslides-search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={biText(profile, 'スライドを検索', 'Tìm slide')} /></div>
+      <div className="myslides-search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={biText(profile, 'プレゼンテーションを検索', 'Tìm kiếm bài thuyết trình...')} /></div>
       <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
         <option value="all">{biText(profile, 'すべての状態', 'Tất cả trạng thái')}</option>
         <option value="保存済み">{biText(profile, '保存済み', 'Đã lưu')}</option>
@@ -250,25 +259,25 @@ export function MySlidesPage({ nav, profile, setProfile }) {
 
     <section className="slide-table-wrap">
       <div className="slide-table-head">
-        <span><Bi jp="スライド名" vi="Tên slide" profile={profile}/></span>
+        <span><Bi jp="プレゼン名" vi="Tên bài trình chiếu" profile={profile}/></span>
         <span><Bi jp="状態" vi="Trạng thái" profile={profile}/></span>
         <span><Bi jp="最終更新" vi="Cập nhật" profile={profile}/></span>
-        <span><Bi jp="ページ数" vi="Số trang" profile={profile}/></span>
         <span><Bi jp="操作" vi="Thao tác" profile={profile}/></span>
       </div>
       {rows.map(deck => <article className="slide-row" key={deck.id}>
-        <div className="slide-row-title"><b>{deck.title}</b><small>{deck.slides?.[0]?.title || deck.title}</small></div>
+        <button className="slide-row-title slide-row-link" onClick={() => nav('editor', { deckId: deck.id === 'demo' ? null : deck.id })}>
+          <b>{deck.title}</b><small>{deck.slides?.[0]?.title || deck.title}</small>
+        </button>
         <div><span className={deck.status === '保存済み' ? 'status-pill saved' : 'status-pill sample'}>{deck.status}</span></div>
         <div className="muted">{deckDate(deck)}</div>
-        <div className="muted">{deck.slides?.length || 0}</div>
-        <div className="row-actions">
-          <button className="outline" onClick={() => nav('editor', { deckId: deck.id === 'demo' ? null : deck.id })}><Edit3 size={14}/><Bi jp="編集" vi="Sửa" profile={profile}/></button>
-          <button className="outline" onClick={() => downloadDeck(deck)}><Download size={14}/><Bi jp="DL" vi="Tải" profile={profile}/></button>
-          <button className="outline" onClick={() => copyDeck(deck)}><Copy size={14}/><Bi jp="コピー" vi="Sao chép" profile={profile}/></button>
-          {deck.id !== 'demo' && <button className="outline danger" onClick={() => remove(deck.id)}><Trash2 size={14}/><Bi jp="削除" vi="Xóa" profile={profile}/></button>}
+        <div className="row-actions icon-actions">
+          <button className="outline icon-only" title={biText(profile, '編集', 'Sửa')} aria-label={biText(profile, '編集', 'Sửa')} onClick={() => nav('editor', { deckId: deck.id === 'demo' ? null : deck.id })}><Edit3 size={14}/></button>
+          <button className="outline icon-only" title={biText(profile, 'ダウンロード', 'Tải')} aria-label={biText(profile, 'ダウンロード', 'Tải')} onClick={() => downloadDeck(deck)}><Download size={14}/></button>
+          <button className="outline icon-only" title={biText(profile, 'コピー', 'Sao chép')} aria-label={biText(profile, 'コピー', 'Sao chép')} onClick={() => copyDeck(deck)}><Copy size={14}/></button>
+          <button className="outline danger icon-only" title={biText(profile, '削除', 'Xóa')} aria-label={biText(profile, '削除', 'Xóa')} onClick={() => remove(deck.id)}><Trash2 size={14}/></button>
         </div>
       </article>)}
-      {rows.length === 0 && <div className="empty"><Bi jp="条件に一致するスライドがありません。" vi="Không có slide phù hợp với điều kiện tìm kiếm." profile={profile}/></div>}
+      {rows.length === 0 && <div className="empty"><Bi jp="条件に一致するスライドがありません。" vi="Không có bài trình chiếu phù hợp với điều kiện tìm kiếm." profile={profile}/></div>}
     </section>
   </AppLayout>
 }

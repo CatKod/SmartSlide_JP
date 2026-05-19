@@ -12,7 +12,7 @@ import { TemplateDetailPage } from './pages/TemplateDetailPage.jsx';
 import { SlideEditorPage } from './pages/SlideEditorPage.jsx';
 import './styles.css';
 
-const defaultProfile = { name: 'Tuệ', email: 'teacher@example.com', level: 'N3/N4', language: '日本語' };
+const defaultProfile = { name: 'Tuệ', email: 'teacher@example.com', level: 'N3/N4', title: '日本語教師', language: '日本語' };
 
 function App() {
   const [route, setRoute] = useState('login');
@@ -48,9 +48,9 @@ function App() {
 
     const layoutProps = { nav, profile, setProfile };
 
-    if (route === 'login') return <LoginPage nav={nav} />;
-    if (route === 'register') return <RegisterPage nav={nav} />;
-    if (route === 'forgot') return <ForgotPasswordPage nav={nav} />;
+    if (route === 'login') return <LoginPage nav={nav} profile={profile} />;
+    if (route === 'register') return <RegisterPage nav={nav} profile={profile} />;
+    if (route === 'forgot') return <ForgotPasswordPage nav={nav} profile={profile} />;
     if (route === 'dashboard') return <DashboardPage {...layoutProps} />;
     if (route === 'slides') return <MySlidesPage {...layoutProps} />;
     if (route === 'shared') return <SharedMaterialsPage {...layoutProps} />;

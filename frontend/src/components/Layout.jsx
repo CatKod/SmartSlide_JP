@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { BookOpen, Globe2, LayoutDashboard, Search, Settings, SlidersHorizontal, Upload, UserRound } from 'lucide-react';
+import { FileText, GalleryHorizontal, Globe2, House, Search, Settings, Share2, Upload, UserRound } from 'lucide-react';
 import { Bi, biText } from '../i18n.jsx';
 
 function createUploadedTemplate(file) {
@@ -50,10 +50,10 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
   const [keyword, setKeyword] = useState('');
   const uploadRef = useRef(null);
   const items = [
-    ['dashboard', 'ダッシュボード', 'Bảng điều khiển', LayoutDashboard],
-    ['slides', 'マイスライド', 'Slide của tôi', BookOpen],
-    ['templates', 'テンプレート', 'Mẫu slide', Search],
-    ['shared', '共有教材', 'Tài liệu chung', SlidersHorizontal],
+    ['dashboard', 'ダッシュボード', 'Bảng điều khiển', House],
+    ['slides', 'マイスライド', 'Bài trình chiếu của tôi', FileText],
+    ['templates', 'ギャラリー', 'Thư viện', GalleryHorizontal],
+    ['shared', '共有資料', 'Tài liệu chung', Share2],
     ['settings', '設定', 'Cài đặt', Settings],
   ];
 
@@ -75,8 +75,7 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
     const uploadedTemplate = createUploadedTemplate(file);
     const nextTemplates = [uploadedTemplate, ...getUploadedTemplates()];
     saveUploadedTemplates(nextTemplates);
-    alert(`${file.name} をテンプレートとして追加しました。
-Template mới đã được thêm vào danh sách.`);
+    alert(biText(profile, `${file.name} をテンプレートとして追加しました。`, `Đã thêm ${file.name} vào danh sách mẫu.`));
     e.target.value = '';
     nav('templates', { uploadedTemplateId: uploadedTemplate.id });
   }
@@ -93,15 +92,17 @@ Template mới đã được thêm vào danh sách.`);
           <input className="global-search" value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder={biText(profile, 'キーワード、文法、トピックで検索...', 'Tìm kiếm từ khóa, ngữ pháp, chủ đề...')} />
         </form>
         <input ref={uploadRef} type="file" accept=".json,.ppt,.pptx,.pdf" hidden onChange={handleTemplateUpload} />
-        <button className="pink top-upload" onClick={() => uploadRef.current?.click()}><Upload size={16}/><Bi jp="テンプレートをアップロード" vi="Upload template" profile={profile}/></button>
-        <div className="language-switch" title="Language">
+        <button className="pink top-upload" onClick={() => uploadRef.current?.click()}><Upload size={16}/><Bi jp="テンプレートをアップロード" vi="Tải mẫu lên" profile={profile}/></button>
+        <div className="language-switch" title={biText(profile, '言語', 'Ngôn ngữ')}>
           <Globe2 size={15}/>
           <select value={profile?.language || '日本語'} onChange={e=>updateLanguage(e.target.value)}>
             <option value="日本語">JP</option>
             <option value="日本語 + Tiếng Việt">JP + VI</option>
           </select>
         </div>
-        <button className="avatar" onClick={() => nav('settings')} aria-label="プロフィール"><UserRound size={18}/></button>
+        <button className="avatar" onClick={() => nav('settings')} aria-label="プロフィール">
+          {profile?.avatarUrl ? <img src={profile.avatarUrl} alt="" /> : <UserRound size={18}/>}
+        </button>
       </header>
       {children}
     </main>
