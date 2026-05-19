@@ -6,6 +6,17 @@ export function LoginPage({ nav, setProfile }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Lấy thông tin tài khoản vừa đăng ký để tự động điền
+  const regEmail = sessionStorage.getItem('reg_email') || '';
+  const regPassword = sessionStorage.getItem('reg_password') || '';
+  if (regEmail) {
+    sessionStorage.removeItem('reg_email');
+    sessionStorage.removeItem('reg_password');
+  }
+
+  const defaultEmail = regEmail || 'teacher@example.com';
+  const defaultPassword = regPassword || 'password';
+
   async function submit(e){
     e.preventDefault();
     const data = new FormData(e.currentTarget);
@@ -48,8 +59,8 @@ export function LoginPage({ nav, setProfile }) {
       </div>
     </section>
     <form className="auth-card" onSubmit={submit}>
-      <h2>おかえりなさい！</h2><label>メール</label><input name="email" type="email" placeholder="teacher@example.com" defaultValue="teacher@example.com" />
-      <label>パスワード</label><input name="password" type="password" placeholder="パスワード" defaultValue="password" />
+      <h2>おかえりなさい！</h2><label>メール</label><input name="email" type="email" placeholder="teacher@example.com" defaultValue={defaultEmail} />
+      <label>パスワード</label><input name="password" type="password" placeholder="パスワード" defaultValue={defaultPassword} />
       {error && <p className="error">{error}</p>}
       <button className="pink full auth-submit" disabled={loading}>{loading ? 'ログイン中...' : 'ログイン'}</button>
       <div className="auth-links">

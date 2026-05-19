@@ -21,6 +21,8 @@ export function RegisterPage({ nav }) {
     try {
       const username = email.split('@')[0];
       await apiRegister({ username, name, email, password });
+      sessionStorage.setItem('reg_email', email);
+      sessionStorage.setItem('reg_password', password);
       alert('登録しました。ログインしてください。');
       nav('login');
     } catch (err) {
