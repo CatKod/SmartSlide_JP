@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { LoginPage } from './pages/LoginPage.jsx';
 import { RegisterPage } from './pages/RegisterPage.jsx';
@@ -13,7 +13,7 @@ import { SlideEditorPage } from './pages/SlideEditorPage.jsx';
 import { getUser, clearToken } from './api.js';
 import './styles.css';
 
-const defaultProfile = { name: 'Tuệ', email: 'teacher@example.com', level: 'N3/N4', language: '日本語' };
+const defaultProfile = { name: 'Tuệ', email: 'teacher@example.com', level: 'N3/N4', title: '日本語教師', language: '日本語' };
 
 function App() {
   const [route, setRoute] = useState('login');
@@ -23,6 +23,14 @@ function App() {
   const [profile, setProfile] = useState(() => {
     return getUser() || defaultProfile;
   });
+
+  useEffect(() => {
+    const syncLanguage = (event) => {
+      if (event.detail) setProfile(event.detail);
+    };
+    window.addEventListener('smartslide-language-change', syncLanguage);
+    return () => window.removeEventListener('smartslide-language-change', syncLanguage);
+  }, []);
 
   const page = useMemo(() => {
     const nav = (next, payload = {}) => {
@@ -40,11 +48,11 @@ function App() {
       setRoute(next);
     };
 
-    const layoutProps = { nav, profile };
+    const layoutProps = { nav, profile, setProfile };
 
-    if (route === 'login') return <LoginPage nav={nav} setProfile={setProfile} />;
-    if (route === 'register') return <RegisterPage nav={nav} />;
-    if (route === 'forgot') return <ForgotPasswordPage nav={nav} />;
+    if (route === 'login') return <LoginPage nav={nav} profile={profile} setProfile={setProfile} />;
+    if (route === 'register') return <RegisterPage nav={nav} profile={profile} />;
+    if (route === 'forgot') return <ForgotPasswordPage nav={nav} profile={profile} />;
     if (route === 'dashboard') return <DashboardPage {...layoutProps} />;
     if (route === 'slides') return <MySlidesPage {...layoutProps} />;
     if (route === 'shared') return <SharedMaterialsPage {...layoutProps} />;

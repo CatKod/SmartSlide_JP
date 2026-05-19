@@ -44,3 +44,69 @@ Sau đó mở trình duyệt tại:
 ```text
 http://localhost:5173
 ```
+
+
+## Cập nhật v15
+
+### Nội dung đã sửa
+- Cập nhật thanh header theo yêu cầu mới của giao diện SmartSlide JP.
+- Đổi nút tạo slide trên header thành nút upload template.
+- Thêm biểu tượng kính lúp trong ô tìm kiếm toàn cục.
+- Bỏ nút logout khỏi header để giao diện gọn hơn.
+- Thêm lựa chọn ngôn ngữ Nhật / Nhật + Việt trực tiếp trên header.
+- Bỏ phần chọn ngôn ngữ khỏi trang Cài đặt.
+- Thiết kế lại trang My Slides theo dạng danh sách chữ nhật chuyên nghiệp hơn.
+- Bổ sung các thao tác quản lý slide: edit, download, copy, delete.
+- Bổ sung import/export slide, tìm kiếm, lọc và sắp xếp trong trang My Slides.
+
+### Ghi chú
+Các cập nhật này giúp giao diện giống hệ thống quản lý slide thực tế hơn và thuận tiện hơn cho giáo viên khi quản lý nhiều bộ slide.
+
+
+## Cập nhật v16
+
+### Nội dung đã sửa
+1. Căn chỉnh lại thanh trên cùng để ô tìm kiếm chiếm không gian còn lại và avatar nằm sát bên phải.
+2. Giữ nút upload template, ô chuyển ngôn ngữ và avatar cùng hàng, hạn chế khoảng trắng thừa.
+3. Sửa cơ chế truyền `setProfile` vào toàn bộ layout để chuyển đổi ngôn ngữ JP / JP + VI ổn định ở mọi màn hình.
+4. Thiết kế lại Dashboard theo dạng danh sách dự án gần đây giống mẫu giao diện:
+   - Có lời chào giáo viên.
+   - Có nút tạo slide mới.
+   - Có khu vực `最近のプロジェクト`.
+   - Các project/template hiển thị dạng card chữ nhật có preview xám, icon tài liệu, tên và thời gian chỉnh sửa.
+
+
+## Cập nhật v17
+
+### Nội dung đã sửa
+1. Sửa nút `DL` tại trang `マイスライド`:
+   - Trước đây tải file JSON.
+   - Hiện tại mặc định xuất và tải slide dưới dạng PDF.
+
+2. Khôi phục Dashboard:
+   - Bố cục Dashboard được đưa về dạng v15.
+   - Vẫn giữ thanh header mới đã ổn định ở v16.
+
+3. Giữ nguyên các phần đang hoạt động tốt:
+   - Ô tìm kiếm trên header.
+   - Nút upload template.
+   - Bộ chuyển ngôn ngữ JP / JP + VI.
+   - Avatar bên phải.
+
+
+## Cập nhật v18
+
+### Nội dung đã sửa
+1. Sửa chức năng upload template:
+   - Trước đây sau khi upload chỉ chuyển sang trang template nhưng template mới chưa xuất hiện.
+   - Hiện tại file upload sẽ được thêm vào danh sách template.
+
+2. Quy tắc template upload:
+   - Tên template luôn là `新しいテンプレート`.
+   - Có nhãn `アップロード`.
+   - Có nhiều slide mẫu để giáo viên tiếp tục chỉnh sửa.
+   - Có đầy đủ chức năng preview, sử dụng mẫu, chỉnh sửa text/ảnh, lưu và xuất file.
+
+3. Lưu trữ:
+   - Bản demo frontend lưu template upload trong `localStorage`.
+   - Khi tích hợp backend, phần này có thể nối với API upload template thật.

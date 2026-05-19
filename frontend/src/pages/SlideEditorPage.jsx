@@ -9,12 +9,11 @@ const TEXT_PLACEHOLDER = 'ここにテキストを入力してください';
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=900&auto=format&fit=crop';
 
 const COLOR_PALETTE = [
-  { title: '自動 / Tự động', colors: ['#201827'] },
-  { title: 'テーマカラー / Màu chủ đề', colors: ['#000000','#444444','#777777','#0f172a','#155e75','#ea580c','#166534','#0ea5e9','#a21caf','#4ade80'] },
-  { title: '標準カラー / Màu chuẩn', colors: ['#dc2626','#ef4444','#f59e0b','#facc15','#84cc16','#22c55e','#06b6d4','#2563eb','#1e3a8a','#7c3aed'] },
-  { title: '淡い色 / Màu nhạt', colors: ['#fecaca','#fed7aa','#fef3c7','#d9f99d','#bbf7d0','#bae6fd','#bfdbfe','#ddd6fe','#fbcfe8','#e5e7eb'] },
+  { jp: '自動', vi: 'Tự động', colors: ['#201827'] },
+  { jp: 'テーマカラー', vi: 'Màu chủ đề', colors: ['#000000','#444444','#777777','#0f172a','#155e75','#ea580c','#166534','#0ea5e9','#a21caf','#4ade80'] },
+  { jp: '標準カラー', vi: 'Màu chuẩn', colors: ['#dc2626','#ef4444','#f59e0b','#facc15','#84cc16','#22c55e','#06b6d4','#2563eb','#1e3a8a','#7c3aed'] },
+  { jp: '淡い色', vi: 'Màu nhạt', colors: ['#fecaca','#fed7aa','#fef3c7','#d9f99d','#bbf7d0','#bae6fd','#bfdbfe','#ddd6fe','#fbcfe8','#e5e7eb'] },
 ];
-
 
 function createTitleElement(title, index = 0) {
   return {
@@ -77,11 +76,6 @@ function createBlankSlides() {
   }];
 }
 
-// loadSavedDeck giờ là async, được gọi trong useEffect
-function loadSavedDeck(deckId) {
-  return null; // placeholder - actual loading happens in useEffect
-}
-
 function normalizeSlide(slide, index = 0) {
   if (slide.elements) {
     const normalizedElements = slide.elements.map((el, elIndex) => ({
@@ -136,7 +130,6 @@ function normalizeSlides(slides) {
   return slides.map((slide, index) => normalizeSlide(slide, index));
 }
 
-
 function SlideView({ slide, className = '' }) {
   if (!slide) return null;
   return <div
@@ -158,12 +151,12 @@ function SlideView({ slide, className = '' }) {
           textAlign: el.align || 'left',
           color: el.color || '#201827',
         }}
-      >{el.content}</div> : <img src={el.src || DEFAULT_IMAGE} alt="slide" />}
+      >{el.content}</div> : <img src={el.src || DEFAULT_IMAGE} alt="スライド" />}
     </div>)}
   </div>;
 }
 
-function PresentationOverlay({ slides, index, setIndex, close }) {
+function PresentationOverlay({ slides, index, setIndex, close, profile }) {
   const currentSlide = slides[index] || slides[0];
   function handleClick(e) {
     if (e.target.closest('.presentation-exit')) return;
@@ -174,13 +167,14 @@ function PresentationOverlay({ slides, index, setIndex, close }) {
   return <div className="presentation-overlay" onClick={handleClick}>
     <SlideView slide={currentSlide} />
     <div className="presentation-counter">{index + 1} / {slides.length}</div>
-    <button className="presentation-exit" onClick={close}><X size={18}/> 終了</button>
+    <button className="presentation-exit" onClick={close}><X size={18}/> <Bi jp="終了" vi="Thoát" profile={profile}/></button>
   </div>;
 }
 
-export function SlideEditorPage({ nav, templateId, deckId, profile }) {
+export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }) {
   const [currentDeckId, setCurrentDeckId] = useState(deckId || null);
   const [slides, setSlides] = useState(() => normalizeSlides(createBlankSlides()));
+  const [slideName, setSlideName] = useState('新しいスライド');
   const [active, setActive] = useState(0);
   const [selectedId, setSelectedId] = useState(null);
   const [notice, setNotice] = useState('');
@@ -201,23 +195,23 @@ export function SlideEditorPage({ nav, templateId, deckId, profile }) {
     async function load() {
       try {
         if (deckId) {
-          // Mở slide đã lưu
           const data = await apiGetSlide(deckId);
           if (!cancelled && data.slide) {
             setCurrentDeckId(data.slide._id);
             setSlides(normalizeSlides(data.slide.slides || []));
+            setSlideName(data.slide.title || '新しいスライド');
           }
         } else if (templateId) {
-          // Tạo mới từ template
           const data = await apiGetTemplateDetail(templateId);
           if (!cancelled && data.template) {
             setSlides(normalizeSlides(cloneSlides(data.template.slidesData || [])));
+            setSlideName(data.template.title || '新しいスライド');
             setCurrentDeckId(null);
           }
         } else {
-          // Slide trắng
           if (!cancelled) {
             setSlides(normalizeSlides(createBlankSlides()));
+            setSlideName('新しいスライド');
             setCurrentDeckId(null);
           }
         }
@@ -403,11 +397,9 @@ export function SlideEditorPage({ nav, templateId, deckId, profile }) {
     e.target.value = '';
     if (!file) return;
     try {
-      // Upload ảnh lên backend, nhận URL
       const res = await apiUploadImage(file);
       appendImage(`http://localhost:5000${res.url}`);
     } catch {
-      // Fallback: dùng DataURL nếu upload thất bại
       const reader = new FileReader();
       reader.onload = () => appendImage(String(reader.result));
       reader.readAsDataURL(file);
@@ -452,7 +444,6 @@ export function SlideEditorPage({ nav, templateId, deckId, profile }) {
     setSelectedId(null);
     setNotice('選択した要素を削除しました。');
   }
-
 
   function setSelectedImageAsBackground() {
     if (!selectedElement || selectedElement.type !== 'image') {
@@ -524,13 +515,11 @@ export function SlideEditorPage({ nav, templateId, deckId, profile }) {
     setSaving(true);
     setNotice('保存中...');
     try {
-      const title = slides[0]?.title || '無題のスライド';
+      const title = slideName || slides[0]?.title || '無題のスライド';
       if (currentDeckId) {
-        // 既存スライドを更新
         await apiUpdateSlide(currentDeckId, { title, slides, templateId: templateId || null });
         setNotice('既存のスライドを更新しました。');
       } else {
-        // 新規作成
         const res = await apiCreateSlide({ title, slides, templateId: templateId || null });
         setCurrentDeckId(res.slide._id);
         setNotice('新しいスライドとして保存しました。');
@@ -541,7 +530,6 @@ export function SlideEditorPage({ nav, templateId, deckId, profile }) {
       setSaving(false);
     }
   }
-
 
   async function waitForImages(node) {
     const images = Array.from(node.querySelectorAll('img'));
@@ -567,7 +555,6 @@ export function SlideEditorPage({ nav, templateId, deckId, profile }) {
       overlay.style.cssText = 'position:absolute;inset:0;background:rgba(255,255,255,.18);z-index:0;';
       node.appendChild(overlay);
     }
-
 
     (slide.elements || []).forEach(el => {
       const box = document.createElement('div');
@@ -643,7 +630,7 @@ export function SlideEditorPage({ nav, templateId, deckId, profile }) {
       const pptx = new pptxgen();
       pptx.layout = 'LAYOUT_WIDE';
       pptx.author = profile?.name || 'SmartSlide JP';
-      pptx.subject = 'SmartSlide JP exported slide deck';
+      pptx.subject = 'SmartSlide JP スライド出力';
       pptx.title = slides[0]?.title || 'SmartSlide JP';
       slideImages.forEach(image => {
         const pptSlide = pptx.addSlide();
@@ -660,11 +647,15 @@ export function SlideEditorPage({ nav, templateId, deckId, profile }) {
 
   if (!current) return null;
 
-  return <AppLayout nav={nav} active="slides" profile={profile} compactSidebar>
+  return <AppLayout nav={nav} active="slides" profile={profile} setProfile={setProfile} compactSidebar>
     <section className="editor">
       <aside className="slide-list">
-        <button className="outline full" onClick={addSlide}><Plus size={15}/><Bi jp="スライド追加" vi="Thêm slide" profile={profile}/></button>
-        <p className="slide-order-hint"><Bi jp="スライドをドラッグして順番を変更できます。不要なページはゴミ箱で削除できます。" vi="Kéo slide để đổi thứ tự. Có thể xóa trang không cần bằng biểu tượng thùng rác." profile={profile}/></p>
+        <h2 className="editor-page-title"><Bi jp="新しいスライドを作成" vi="Tạo bài trình chiếu mới" profile={profile}/></h2>
+        <p className="editor-page-subtitle"><Bi jp="テンプレートまたは空白から編集を開始できます。" vi="Bắt đầu chỉnh sửa từ mẫu có sẵn hoặc trang trống." profile={profile}/></p>
+        <label className="editor-name-label"><Bi jp="スライド名" vi="Tên bài trình chiếu" profile={profile}/></label>
+        <input className="editor-name-input" value={slideName} onChange={e => setSlideName(e.target.value)} placeholder="例：N3文法レッスン - 助詞" />
+        <button className="outline full" onClick={addSlide}><Plus size={15}/><Bi jp="スライド追加" vi="Thêm trang" profile={profile}/></button>
+        <p className="slide-order-hint"><Bi jp="スライドをドラッグして順番を変更できます。不要なページはゴミ箱で削除できます。" vi="Kéo trang để đổi thứ tự. Có thể xóa trang không cần bằng biểu tượng thùng rác." profile={profile}/></p>
         {slides.map((s, i) => <div
           key={s.id}
           className={i === active ? 'thumb active' : 'thumb'}
@@ -703,7 +694,7 @@ export function SlideEditorPage({ nav, templateId, deckId, profile }) {
             <button
               type="button"
               className="text-color-tool palette-toggle"
-              title="文字色 / Màu chữ"
+              title={biText(profile, '文字色', 'Màu chữ')}
               disabled={selectedElement?.type !== 'text'}
               onClick={() => {
                 if (selectedElement?.type !== 'text') return setNotice('先にテキストボックスを選択してください。');
@@ -714,8 +705,8 @@ export function SlideEditorPage({ nav, templateId, deckId, profile }) {
               <b className="color-preview" style={{ backgroundColor: selectedElement?.color || '#201827' }}></b>
             </button>
             {colorPaletteOpen && selectedElement?.type === 'text' && <div className="color-palette-panel">
-              {COLOR_PALETTE.map(group => <div className="color-group" key={group.title}>
-                <p>{group.title}</p>
+              {COLOR_PALETTE.map(group => <div className="color-group" key={group.jp}>
+                <p><Bi jp={group.jp} vi={group.vi} profile={profile}/></p>
                 <div className="color-grid">
                   {group.colors.map(color => <button
                     key={color}
@@ -728,7 +719,7 @@ export function SlideEditorPage({ nav, templateId, deckId, profile }) {
               </div>)}
               <div className="custom-color-row">
                 <label>
-                  その他の色 / Màu khác
+                  <Bi jp="その他の色" vi="Màu khác" profile={profile}/>
                   <input type="color" value={selectedElement?.color || '#201827'} onChange={e => applyTextColor(e.target.value)} />
                 </label>
               </div>
@@ -738,14 +729,14 @@ export function SlideEditorPage({ nav, templateId, deckId, profile }) {
           <button className={selectedElement?.align === 'center' ? 'active-tool align-tool' : 'align-tool'} onClick={() => setTextFormat({ align: 'center' })} disabled={selectedElement?.type !== 'text'}>中</button>
           <button className={selectedElement?.align === 'right' ? 'active-tool align-tool' : 'align-tool'} onClick={() => setTextFormat({ align: 'right' })} disabled={selectedElement?.type !== 'text'}>右</button>
           <button onClick={save} disabled={saving}><Save size={16}/>{saving ? '保存中...' : <Bi jp="保存" vi="Lưu" profile={profile}/>}</button>
-          <button onClick={() => nav('slides')}><Bi jp="マイスライドへ" vi="Về slide của tôi" profile={profile}/></button>
+          <button onClick={() => nav('slides')}><Bi jp="マイスライドへ" vi="Về bài trình chiếu của tôi" profile={profile}/></button>
           <button className="presentation-btn" onClick={startPresentation}><Play size={16}/><Bi jp="プレゼン" vi="Trình chiếu" profile={profile}/></button>
           <div className="export-tools">
             <select value={exportFormat} onChange={e => setExportFormat(e.target.value)} aria-label="出力形式">
               <option value="pdf">PDF</option>
               <option value="pptx">PPTX</option>
             </select>
-            <button className="download-deck" onClick={exportDeck}><Download size={16}/><Bi jp="スライド出力" vi="Xuất slide" profile={profile}/></button>
+            <button className="download-deck" onClick={exportDeck}><Download size={16}/><Bi jp="スライド出力" vi="Xuất bài trình chiếu" profile={profile}/></button>
           </div>
           <input ref={fileInputRef} className="hidden-file" type="file" accept="image/*" onChange={uploadImage} />
         </div>
@@ -801,6 +792,7 @@ export function SlideEditorPage({ nav, templateId, deckId, profile }) {
         index={presentationIndex}
         setIndex={setPresentationIndex}
         close={closePresentation}
+        profile={profile}
       />}
     </section>
   </AppLayout>;

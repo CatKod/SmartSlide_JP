@@ -1,20 +1,83 @@
-import React, { useState } from 'react';
-import { BookOpen, LayoutDashboard, LogOut, Search, Settings, SlidersHorizontal, UserRound } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { FileText, GalleryHorizontal, Globe2, House, Search, Settings, Share2, Upload, UserRound } from 'lucide-react';
 import { Bi, biText } from '../i18n.jsx';
 
-export function AppLayout({ children, nav, active = 'templates', profile, compactSidebar = false }) {
+function createUploadedTemplate(file) {
+  const now = Date.now();
+  const slideTitles = ['表紙', '導入', '本文1', '本文2', '練習', 'まとめ', '確認'];
+  return {
+    id: `uploaded_tpl_${now}`,
+    title: '新しいテンプレート',
+    category: 'uploaded',
+    categoryLabel: 'アップロード',
+    level: 'カスタム',
+    author: 'Tuệ先生',
+    rating: 4.8,
+    downloads: 0,
+    image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=900&auto=format&fit=crop',
+    description: `アップロードされたファイル「${file.name}」から作成したテンプレートです。編集画面で文字・画像・背景・ページ順を自由に変更できます。`,
+    tags: ['アップロード', 'カスタム', 'PPTX'],
+    sourceFileName: file.name,
+    uploadedAt: new Date().toLocaleString('ja-JP'),
+    slidesData: slideTitles.map((title, index) => ({
+      id: `uploaded_${now}_${index}`,
+      title: index === 0 ? '新しいテンプレート' : title,
+      body: index === 0
+        ? 'アップロードしたテンプレートです。\n授業内容に合わせて編集してください。'
+        : `${title}の内容をここに入力してください。`,
+      image: index % 2 === 0
+        ? 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=900&auto=format&fit=crop'
+        : 'https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=900&auto=format&fit=crop',
+    })),
+  };
+}
+
+function getUploadedTemplates() {
+  try {
+    return JSON.parse(localStorage.getItem('smartslide_uploaded_templates') || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveUploadedTemplates(templates) {
+  localStorage.setItem('smartslide_uploaded_templates', JSON.stringify(templates));
+  window.dispatchEvent(new CustomEvent('smartslide-template-uploaded', { detail: templates }));
+}
+
+
+export function AppLayout({ children, nav, active = 'templates', profile, setProfile, compactSidebar = false }) {
   const [keyword, setKeyword] = useState('');
+  const uploadRef = useRef(null);
   const items = [
-    ['dashboard', 'ダッシュボード', 'Bảng điều khiển', LayoutDashboard],
-    ['slides', 'マイスライド', 'Slide của tôi', BookOpen],
-    ['templates', 'テンプレート', 'Mẫu slide', Search],
-    ['shared', '共有教材', 'Tài liệu chung', SlidersHorizontal],
+    ['dashboard', 'ダッシュボード', 'Bảng điều khiển', House],
+    ['slides', 'マイスライド', 'Bài trình chiếu của tôi', FileText],
+    ['templates', 'ギャラリー', 'Thư viện', GalleryHorizontal],
+    ['shared', '共有資料', 'Tài liệu chung', Share2],
     ['settings', '設定', 'Cài đặt', Settings],
   ];
 
   function submitSearch(e) {
     e.preventDefault();
     nav('templates', { keyword });
+  }
+
+  function updateLanguage(language) {
+    const next = { ...(profile || {}), language };
+    localStorage.setItem('smartslide_profile', JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent('smartslide-language-change', { detail: next }));
+    if (setProfile) setProfile(next);
+  }
+
+  function handleTemplateUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const uploadedTemplate = createUploadedTemplate(file);
+    const nextTemplates = [uploadedTemplate, ...getUploadedTemplates()];
+    saveUploadedTemplates(nextTemplates);
+    alert(biText(profile, `${file.name} をテンプレートとして追加しました。`, `Đã thêm ${file.name} vào danh sách mẫu.`));
+    e.target.value = '';
+    nav('templates', { uploadedTemplateId: uploadedTemplate.id });
   }
 
   return <div className={compactSidebar ? 'app-shell compact-sidebar' : 'app-shell'}>
@@ -25,12 +88,21 @@ export function AppLayout({ children, nav, active = 'templates', profile, compac
     <main className="main">
       <header className="topbar">
         <form className="top-search-form" onSubmit={submitSearch}>
-          <input className="global-search" value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder={biText(profile, 'キーワード、教材、テンプレートで検索', 'Tìm theo từ khóa, tài liệu, mẫu slide')} />
+          <Search size={17} className="search-icon" />
+          <input className="global-search" value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder={biText(profile, 'キーワード、文法、トピックで検索...', 'Tìm kiếm từ khóa, ngữ pháp, chủ đề...')} />
         </form>
-        <button className="pink" onClick={() => nav('editor', { deckId: null })}>+ <Bi jp="新しいスライドを作成" vi="Tạo slide mới" profile={profile}/></button>
-        <button className="avatar" onClick={() => nav('settings')} aria-label="プロフィール"><UserRound size={18}/></button>
-        {profile?.name && <span className="top-name">{profile.name}先生</span>}
-        <button className="logout" onClick={() => nav('login')}><LogOut size={16}/><Bi jp="ログアウト" vi="Đăng xuất" profile={profile}/></button>
+        <input ref={uploadRef} type="file" accept=".json,.ppt,.pptx,.pdf" hidden onChange={handleTemplateUpload} />
+        <button className="pink top-upload" onClick={() => uploadRef.current?.click()}><Upload size={16}/><Bi jp="テンプレートをアップロード" vi="Tải mẫu lên" profile={profile}/></button>
+        <div className="language-switch" title={biText(profile, '言語', 'Ngôn ngữ')}>
+          <Globe2 size={15}/>
+          <select value={profile?.language || '日本語'} onChange={e=>updateLanguage(e.target.value)}>
+            <option value="日本語">JP</option>
+            <option value="日本語 + Tiếng Việt">JP + VI</option>
+          </select>
+        </div>
+        <button className="avatar" onClick={() => nav('settings')} aria-label="プロフィール">
+          {profile?.avatarUrl ? <img src={profile.avatarUrl} alt="" /> : <UserRound size={18}/>}
+        </button>
       </header>
       {children}
     </main>

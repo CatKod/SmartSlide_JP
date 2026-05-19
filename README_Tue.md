@@ -66,3 +66,35 @@ http://localhost:5173
 - Đây là bản frontend demo, dữ liệu được lưu tạm bằng localStorage.
 - Khi muốn kiểm thử sạch, có thể xóa Local Storage của `localhost:5173` trong trình duyệt.
 - Không push thư mục `node_modules` lên GitHub; thư mục này đã được đưa vào `.gitignore`.
+
+
+## Cập nhật v15
+
+- Thanh trên cùng đã được chỉnh lại theo giao diện mới: chữ SmartSlide JP màu đen, có ô tìm kiếm kèm biểu tượng kính lúp, nút hồng chuyển thành Upload template, bỏ nút logout và thêm bộ chuyển ngôn ngữ JP / JP + VI.
+- Phần chọn ngôn ngữ đã được chuyển từ trang Cài đặt lên thanh trên cùng. Trang Cài đặt chỉ còn thông tin hồ sơ giáo viên.
+- Trang マイスライド được đổi từ dạng card vuông sang dạng danh sách chữ nhật, gồm tên slide, trạng thái, thời gian chỉnh sửa, số trang và các nút chỉnh sửa, tải xuống, sao chép, xóa.
+- Trang マイスライド bổ sung nút import, export, tạo mới, thanh tìm kiếm, bộ lọc trạng thái và sắp xếp.
+
+
+## Cập nhật v16
+
+- Thanh header được căn lại theo bố cục mới, ô tìm kiếm kéo dài linh hoạt để giảm khoảng trống bên phải.
+- Nút avatar được đặt sát về phía phải của header.
+- Đảm bảo nút chuyển ngôn ngữ JP / JP + VI hoạt động ổn định ở tất cả các trang.
+- Trang Dashboard được đổi sang bố cục dự án gần đây dạng lưới giống mẫu: tiêu đề chào mừng, nút tạo slide mới, danh sách các project/template gần đây dạng card chữ nhật.
+
+
+## Cập nhật v17
+
+- Nút DL trong trang `マイスライド` đã được đổi để mặc định tải slide dưới dạng PDF thay vì file JSON.
+- Trang Dashboard được khôi phục về bố cục v15 vì bố cục này phù hợp hơn với giao diện tổng quan ban đầu.
+- Header mới của v16 vẫn được giữ nguyên, bao gồm ô tìm kiếm dài, nút upload template, nút chuyển ngôn ngữ JP / JP + VI và avatar.
+
+
+## Cập nhật v18
+
+- Nút `テンプレートをアップロード` trên header đã hoạt động đúng theo yêu cầu.
+- Khi giáo viên upload file PPTX/PPT/PDF/JSON, hệ thống sẽ thêm một template mới vào trang `テンプレート`.
+- Template được upload luôn có tiêu đề tiếng Nhật là `新しいテンプレート`.
+- Template upload có thể preview, sử dụng để tạo slide và chỉnh sửa giống các template có sẵn.
+- Dữ liệu template upload được lưu tạm bằng localStorage trong bản frontend demo.
