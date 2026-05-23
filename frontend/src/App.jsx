@@ -51,8 +51,8 @@ function App() {
     const layoutProps = { nav, profile, setProfile };
 
     if (route === 'login') return <LoginPage nav={nav} profile={profile} setProfile={setProfile} />;
-    if (route === 'register') return <RegisterPage nav={nav} profile={profile} />;
-    if (route === 'forgot') return <ForgotPasswordPage nav={nav} profile={profile} />;
+    if (route === 'register') return <RegisterPage nav={nav} profile={profile} setProfile={setProfile} />;
+    if (route === 'forgot') return <ForgotPasswordPage nav={nav} profile={profile} setProfile={setProfile} />;
     if (route === 'dashboard') return <DashboardPage {...layoutProps} />;
     if (route === 'slides') return <MySlidesPage {...layoutProps} />;
     if (route === 'shared') return <SharedMaterialsPage {...layoutProps} />;

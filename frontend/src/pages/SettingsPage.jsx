@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { AppLayout } from '../components/Layout.jsx';
 import { apiUpdateMe, saveUser } from '../api.js';
 import { Camera, KeyRound, Save } from 'lucide-react';
-import { Bi, biText } from '../i18n.jsx';
+import { Bi, biText, resolveLanguage } from '../i18n.jsx';
 
 export function SettingsPage({ nav, profile, setProfile }) {
   const avatarInputRef = useRef(null);
@@ -11,7 +11,7 @@ export function SettingsPage({ nav, profile, setProfile }) {
     email: profile?.email || '',
     title: profile?.title || '日本語教師',
     level: profile?.level || 'N3/N4',
-    language: profile?.language || '日本語',
+    language: resolveLanguage(profile?.language),
     avatarUrl: profile?.avatarUrl || '',
   }));
   const [passwordForm, setPasswordForm] = useState({
@@ -157,7 +157,7 @@ export function SettingsPage({ nav, profile, setProfile }) {
             <span><Bi jp="表示言語" vi="Ngôn ngữ hiển thị" profile={profile}/></span>
             <select value={form.language} onChange={e => update('language', e.target.value)}>
               <option>日本語</option>
-              <option>日本語 + Tiếng Việt</option>
+              <option>Tiếng Việt</option>
             </select>
           </label>
         </div>

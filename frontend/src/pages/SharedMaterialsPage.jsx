@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AppLayout } from '../components/Layout.jsx';
 import { apiGetMaterials, apiUploadMaterial, apiDeleteMaterial, getToken } from '../api.js';
 import { Download, Search, Upload, X, Trash2 } from 'lucide-react';
-import { Bi, biText } from '../i18n.jsx';
+import { Bi, biText, isVietnamese } from '../i18n.jsx';
 
 function isPreviewable(material) {
   return material.mime?.includes('pdf') || material.mime?.startsWith('image/') || material.mime?.startsWith('text/') || material.previewText;
@@ -15,7 +15,7 @@ export function SharedMaterialsPage({ nav, profile, setProfile }) {
   const [loading, setLoading] = useState(true);
   const [preview, setPreview] = useState(null);
   const fileInputRef = useRef(null);
-  const bi = profile?.language === '日本語 + Tiếng Việt';
+  const bi = isVietnamese(profile);
 
   useEffect(() => {
     let cancelled = false;

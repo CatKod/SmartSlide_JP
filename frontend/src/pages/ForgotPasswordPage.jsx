@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { BookOpen, CheckCircle2, Sparkles, Wand2 } from 'lucide-react';
 import { Bi, biText } from '../i18n.jsx';
+import { LanguageToggleButton } from '../components/LanguageToggleButton.jsx';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function ForgotPasswordPage({ nav, profile }) {
+export function ForgotPasswordPage({ nav, profile, setProfile }) {
   const [message, setMessage] = useState('');
   const [kind, setKind] = useState('');
 
@@ -24,6 +25,9 @@ export function ForgotPasswordPage({ nav, profile }) {
   }
 
   return <div className="auth-page">
+    <div className="auth-language-switch-wrap">
+      <LanguageToggleButton profile={profile} setProfile={setProfile} className="auth-language-switch" />
+    </div>
     <section className="hero rich-hero">
       <div className="hero-glow one" />
       <div className="hero-glow two" />

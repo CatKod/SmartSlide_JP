@@ -176,7 +176,7 @@ export function MySlidesPage({ nav, profile, setProfile }) {
   }, [decks, query, statusFilter, sortBy]);
 
   async function remove(id) {
-    if (!window.confirm(profile?.language === '日本語 + Tiếng Việt' ? 'このスライドを削除しますか？\nBạn có muốn xóa bài trình chiếu này không?' : 'このスライドを削除しますか？')) return;
+    if (!window.confirm(biText(profile, 'このスライドを削除しますか？', 'Bạn có muốn xóa bài trình chiếu này không?'))) return;
     try {
       await apiDeleteSlide(id);
       setDecks(prev => prev.filter(d => d._id !== id));
@@ -201,7 +201,7 @@ export function MySlidesPage({ nav, profile, setProfile }) {
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
       const slides = deck.slides?.length ? deck.slides : [];
       if (slides.length === 0) {
-        alert(profile?.language === '日本語 + Tiếng Việt' ? 'スライドが空です。\nBài trình chiếu trống.' : 'スライドが空です。');
+        alert(biText(profile, 'スライドが空です。', 'Bài trình chiếu trống.'));
         return;
       }
       for (let i = 0; i < slides.length; i += 1) {
@@ -225,9 +225,11 @@ export function MySlidesPage({ nav, profile, setProfile }) {
       pdf.save(`${sanitizeFileName(deck.title || 'slide')}.pdf`);
     } catch (error) {
       console.error(error);
-      alert(profile?.language === '日本語 + Tiếng Việt'
-        ? 'PDF của tài liệu này bị lỗi hoặc link ảnh ngoài không tải được. Hãy dùng ảnh tự tải lên.\nPDFの作成に失敗しました。画像URLが外部サイトの場合は、画像アップロードを使ってください。'
-        : 'PDFの作成に失敗しました。画像URLが外部サイトの場合は、画像アップロードを使ってください。');
+      alert(biText(
+        profile,
+        'PDFの作成に失敗しました。画像URLが外部サイトの場合は、画像アップロードを使ってください。',
+        'Tạo PDF thất bại. Nếu ảnh từ liên kết bên ngoài, vui lòng dùng ảnh tải lên.'
+      ));
     }
   }
 
@@ -251,9 +253,9 @@ export function MySlidesPage({ nav, profile, setProfile }) {
           });
         }
         fetchDecks();
-        alert(profile?.language === '日本語 + Tiếng Việt' ? 'スライドをインポートしました。\nĐã nhập bài trình chiếu.' : 'スライドをインポートしました。');
+        alert(biText(profile, 'スライドをインポートしました。', 'Đã nhập bài trình chiếu.'));
       } catch (err) {
-        alert(profile?.language === '日本語 + Tiếng Việt' ? 'ファイル形式が正しくありません。\nTệp không đúng định dạng.' : 'ファイル形式が正しくありません。');
+        alert(biText(profile, 'ファイル形式が正しくありません。', 'Tệp không đúng định dạng.'));
       }
     };
     reader.readAsText(file);
@@ -263,7 +265,7 @@ export function MySlidesPage({ nav, profile, setProfile }) {
   return <AppLayout nav={nav} active="slides" profile={profile} setProfile={setProfile}>
     <section className="page-head split-head myslides-head">
       <div>
-        <h1><Bi jp="マイスライド" vi="Bài trình chiếu của tôi" profile={profile}/></h1>
+        <h1><Bi jp="マイスライド" vi="Bài trình chiếu" profile={profile}/></h1>
         <p><Bi jp="作成・保存したプレゼンテーションを管理できます。" vi="Bạn có thể quản lý các bài thuyết trình đã tạo và lưu." profile={profile}/></p>
       </div>
       <div className="myslides-head-actions">

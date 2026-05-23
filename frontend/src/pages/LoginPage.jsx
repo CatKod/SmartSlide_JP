@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BookOpen, CheckCircle2, Sparkles, Wand2 } from 'lucide-react';
 import { apiLogin, saveUser } from '../api.js';
 import { Bi, biText } from '../i18n.jsx';
+import { LanguageToggleButton } from '../components/LanguageToggleButton.jsx';
 
 export function LoginPage({ nav, profile, setProfile }) {
   const [error, setError] = useState('');
@@ -40,6 +41,9 @@ export function LoginPage({ nav, profile, setProfile }) {
   }
 
   return <div className="auth-page">
+    <div className="auth-language-switch-wrap">
+      <LanguageToggleButton profile={profile} setProfile={setProfile} className="auth-language-switch" />
+    </div>
     <section className="hero rich-hero">
       <div className="hero-glow one" />
       <div className="hero-glow two" />

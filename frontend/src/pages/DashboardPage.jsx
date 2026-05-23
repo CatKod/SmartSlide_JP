@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AppLayout } from '../components/Layout.jsx';
 import { apiGetTemplates, apiGetMySlides, apiGetMaterials } from '../api.js';
 import { BookOpen, Clock3, Download, LayoutTemplate, Plus, Star } from 'lucide-react';
-import { Bi, biText } from '../i18n.jsx';
+import { Bi, biText, isVietnamese } from '../i18n.jsx';
 
 export function DashboardPage({ nav, profile, setProfile }) {
   const [templates, setTemplates] = useState([]);
@@ -32,9 +32,9 @@ export function DashboardPage({ nav, profile, setProfile }) {
     </section>
     <section className="stats-grid">
       <div className="stat-card"><LayoutTemplate/><span><Bi jp="テンプレート" vi="Mẫu bài trình chiếu" profile={profile}/></span><b>{templates.length}</b></div>
-      <div className="stat-card"><BookOpen/><span><Bi jp="マイスライド" vi="Bài trình chiếu của tôi" profile={profile}/></span><b>{slideCount}</b></div>
+      <div className="stat-card"><BookOpen/><span><Bi jp="マイスライド" vi="Bài trình chiếu" profile={profile}/></span><b>{slideCount}</b></div>
       <div className="stat-card"><Download/><span><Bi jp="共有教材" vi="Tài liệu chung" profile={profile}/></span><b>{materialCount}</b></div>
-      <div className="stat-card"><Clock3/><span><Bi jp="最近の保存" vi="Lưu gần đây" profile={profile}/></span><b>{hasRecent ? (profile.language === '日本語 + Tiếng Việt' ? 'あり / Có' : 'あり') : (profile.language === '日本語 + Tiếng Việt' ? 'なし / Không' : 'なし')}</b></div>
+      <div className="stat-card"><Clock3/><span><Bi jp="最近の保存" vi="Lưu gần đây" profile={profile}/></span><b>{hasRecent ? (isVietnamese(profile) ? 'Có' : 'あり') : (isVietnamese(profile) ? 'Không' : 'なし')}</b></div>
     </section>
     <section className="two-column">
       <div className="panel"><h2><Bi jp="おすすめテンプレート" vi="Mẫu đề xuất" profile={profile}/></h2>{templates.slice(0,3).map(t => <button className="list-row" key={t._id} onClick={() => nav('detail',{templateId:t._id})}><img src={t.image}/><span><b>{t.title}</b><small>{t.categoryLabel}・{t.level}</small></span><em><Star size={14}/> {t.rating}</em></button>)}</div>

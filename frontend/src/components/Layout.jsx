@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { FileText, GalleryHorizontal, Globe2, House, Search, Settings, Share2, Upload, UserRound } from 'lucide-react';
+import { FileText, GalleryHorizontal, House, Search, Settings, Share2, Upload, UserRound } from 'lucide-react';
 import { Bi, biText } from '../i18n.jsx';
+import { LanguageToggleButton } from './LanguageToggleButton.jsx';
 
 function createUploadedTemplate(file) {
   const now = Date.now();
@@ -51,7 +52,7 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
   const uploadRef = useRef(null);
   const items = [
     ['dashboard', 'ダッシュボード', 'Bảng điều khiển', House],
-    ['slides', 'マイスライド', 'Bài trình chiếu của tôi', FileText],
+    ['slides', 'マイスライド', 'Bài trình chiếu', FileText],
     ['templates', 'ギャラリー', 'Thư viện', GalleryHorizontal],
     ['shared', '共有資料', 'Tài liệu chung', Share2],
     ['settings', '設定', 'Cài đặt', Settings],
@@ -60,13 +61,6 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
   function submitSearch(e) {
     e.preventDefault();
     nav('templates', { keyword });
-  }
-
-  function updateLanguage(language) {
-    const next = { ...(profile || {}), language };
-    localStorage.setItem('smartslide_profile', JSON.stringify(next));
-    window.dispatchEvent(new CustomEvent('smartslide-language-change', { detail: next }));
-    if (setProfile) setProfile(next);
   }
 
   function handleTemplateUpload(e) {
@@ -93,13 +87,7 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
         </form>
         <input ref={uploadRef} type="file" accept=".json,.ppt,.pptx,.pdf" hidden onChange={handleTemplateUpload} />
         <button className="pink top-upload" onClick={() => uploadRef.current?.click()}><Upload size={16}/><Bi jp="テンプレートをアップロード" vi="Tải mẫu lên" profile={profile}/></button>
-        <div className="language-switch" title={biText(profile, '言語', 'Ngôn ngữ')}>
-          <Globe2 size={15}/>
-          <select value={profile?.language || '日本語'} onChange={e=>updateLanguage(e.target.value)}>
-            <option value="日本語">JP</option>
-            <option value="日本語 + Tiếng Việt">JP + VI</option>
-          </select>
-        </div>
+        <LanguageToggleButton profile={profile} setProfile={setProfile} />
         <button className="avatar" onClick={() => nav('settings')} aria-label="プロフィール">
           {profile?.avatarUrl ? <img src={profile.avatarUrl} alt="" /> : <UserRound size={18}/>}
         </button>

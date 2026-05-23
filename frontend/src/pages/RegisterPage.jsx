@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { BookOpen, CheckCircle2, Sparkles, Wand2 } from 'lucide-react';
 import { apiRegister } from '../api.js';
 import { Bi, biText } from '../i18n.jsx';
+import { LanguageToggleButton } from '../components/LanguageToggleButton.jsx';
 
-export function RegisterPage({ nav, profile }) {
+export function RegisterPage({ nav, profile, setProfile }) {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
@@ -40,6 +41,9 @@ export function RegisterPage({ nav, profile }) {
   }
 
   return <div className="auth-page">
+    <div className="auth-language-switch-wrap">
+      <LanguageToggleButton profile={profile} setProfile={setProfile} className="auth-language-switch" />
+    </div>
     <section className="hero rich-hero">
       <div className="hero-glow one" />
       <div className="hero-glow two" />
