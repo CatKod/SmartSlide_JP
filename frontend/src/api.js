@@ -130,6 +130,10 @@ export async function apiDeleteSlide(id) {
   return apiFetch(`/slides/${id}`, { method: 'DELETE' });
 }
 
+export async function apiCloneSlide(id) {
+  return apiFetch(`/slides/${id}/clone`, { method: 'POST' });
+}
+
 // ===== Uploads =====
 export async function apiUploadImage(file) {
   const fd = new FormData();

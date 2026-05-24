@@ -1,58 +1,112 @@
-# Báo cáo cập nhật SmartSlide JP bản hoàn chỉnh
+# Báo cáo cập nhật SmartSlide JP - Bản hoàn chỉnh
 
-## Mục tiêu
-Bản cập nhật này hoàn thiện các chức năng còn thiếu trong giao diện SmartSlide JP theo góp ý kiểm thử của Tuệ. Toàn bộ tài liệu ngoài frontend được viết bằng tiếng Việt để dễ theo dõi và nộp kèm project.
+## 1. Phạm vi cập nhật
+Bản cập nhật này hoàn thiện phần frontend SmartSlide JP theo yêu cầu của nhóm, tập trung vào các màn hình đăng nhập, đăng ký, quên mật khẩu, dashboard, quản lý slide, template, tài liệu dùng chung, cài đặt và trình chỉnh sửa slide.
 
-## Những chức năng đã hoàn thiện
-
-### 1. Trang chỉnh sửa slide
-- Thêm trang slide mới.
-- Xóa từng trang slide bằng nút thùng rác ở danh sách bên trái.
-- Không cho xóa khi chỉ còn 1 trang để tránh bộ slide rỗng.
-- Kéo thả các trang slide ở danh sách bên trái để đổi thứ tự.
-- Sau khi đổi thứ tự, số trang tự đánh lại từ trên xuống dưới.
-- Thêm văn bản dạng text box riêng.
-- Thêm ảnh bằng link.
-- Tải ảnh từ thiết bị lên.
-- Thêm nhiều ảnh mà không làm mất ảnh cũ.
-- Kéo thả text box và ảnh trong trang slide.
-- Phóng to, thu nhỏ text box và ảnh bằng tay nắm ở góc.
-- Xóa text box hoặc ảnh đã chọn.
-- Định dạng chữ: B, I, U, cỡ chữ, căn trái, căn giữa, căn phải.
-- Lưu slide vào My Slide mà không bị tạo bản trùng khi lưu nhiều lần.
+## 2. Các chức năng chính đã hoàn thành
+- Đăng nhập, đăng ký tài khoản và giao diện quên mật khẩu.
+- Kiểm tra xác nhận mật khẩu khi đăng ký.
+- Dashboard sau đăng nhập.
+- Danh sách template, tìm kiếm template và preview template.
+- Mỗi template có nhiều trang slide mẫu, có nội dung và hình ảnh minh họa.
+- Tạo slide mới với một trang trắng mặc định có tiêu đề tiếng Nhật `こんにちは`.
+- Quản lý My Slide: lưu, sửa, xóa slide.
+- Trình chỉnh sửa slide: thêm văn bản, thêm ảnh bằng link, upload ảnh từ thiết bị, xóa đối tượng, kéo thả, phóng to/thu nhỏ, chỉnh cỡ chữ, in đậm, in nghiêng, gạch chân, căn lề, đổi màu chữ bằng bảng màu trực quan, đặt ảnh làm hình nền.
+- Tiêu đề của mỗi slide được chuyển thành text box đặc biệt, có thể chỉnh nội dung, màu chữ, cỡ chữ, định dạng, căn lề, kéo thả và resize như các text box khác.
+- Quản lý trang slide: thêm trang, xóa trang, kéo thả để đổi thứ tự trang.
+- Trình chiếu slide toàn màn hình, có chuyển slide bằng click trái/phải hoặc phím mũi tên.
 - Xuất toàn bộ slide ra PDF hoặc PPTX.
-- Đặt ảnh đang chọn làm hình nền cho trang slide bằng nút この画像を背景に設定.
-- Bỏ hình nền của trang slide bằng nút 背景画像を解除.
-- Khi xuất PDF/PPTX, hình nền của từng trang slide được xuất kèm theo bố cục.
+- Trang tài liệu dùng chung: preview PDF, tải xuống, upload tài liệu từ thiết bị và xóa tài liệu.
+- Trang cài đặt: đổi tên giáo viên, email, cấp độ giảng dạy và chọn ngôn ngữ hiển thị.
+- Chế độ ngôn ngữ gồm `日本語` và `日本語 + Tiếng Việt`.
 
-### 2. Tạo slide mới
-- Khi bấm 新しいスライドを作成 hoặc 新規作成, hệ thống tạo một bộ slide mới hoàn toàn.
-- Bộ slide mới chỉ có 1 trang trắng duy nhất với tiêu đề Konnichiwa.
-- Khi bấm このテンプレートで作成 ở trang template, hệ thống vẫn tạo bộ slide theo đúng template đã chọn.
+## 3. Cập nhật mới nhất
+- Thay nút chọn màu chữ dạng khó nhìn bằng bảng màu trực quan giống công cụ soạn thảo văn bản.
+- Bảng màu gồm màu tự động, màu chủ đề, màu chuẩn, màu nhạt và tùy chọn màu khác.
+- Khi chọn text box, giáo viên có thể đổi màu chữ nhanh bằng bảng màu trên thanh công cụ.
+- Màu chữ được áp dụng trong màn hình chỉnh sửa, trình chiếu và khi xuất PDF/PPTX.
+- Cập nhật tiêu đề slide thành text box có thuộc tính `isTitle`, giúp giáo viên tùy chỉnh tiêu đề linh hoạt nhưng vẫn giữ được tên slide trong danh sách bên trái.
 
-### 3. Trang chia sẻ tài liệu
-- Hiển thị 4 tài liệu mẫu dạng PDF.
-- Bấm プレビュー để xem trước nội dung PDF.
-- Bấm ダウンロード để tải PDF thật về máy.
-- Thêm nút 教材をアップロード để giáo viên tải tài liệu từ thiết bị lên.
-- Tài liệu tải lên có thể xem trước nếu là PDF, ảnh hoặc text.
-- Thêm nút 削除 để xóa từng tài liệu khỏi danh sách.
+## 4. Ghi chú kỹ thuật
+- Dữ liệu demo đang lưu bằng `localStorage` để thuận tiện kiểm thử frontend.
+- Các file tài liệu mẫu nằm trong `frontend/public/materials`.
+- Khi kết nối backend thật, có thể thay localStorage bằng API theo tài liệu `docs/API_SPEC.md`.
 
-### 4. Các trang khác
-- Dashboard hiển thị tên giáo viên theo phần cài đặt.
-- Có nút ログアウト để quay về màn hình đăng nhập.
-- Template dùng dữ liệu tiếng Nhật và có nhiều trang slide mẫu.
-- My Slide cho phép sửa, xóa và quản lý slide đã lưu.
+## 5. Cách chạy frontend
+```cmd
+cd frontend
+npm install
+npm run dev
+```
 
-## Ghi chú kỹ thuật
-- Đây là frontend demo chạy bằng React + Vite.
-- Dữ liệu slide và tài liệu upload đang lưu tạm bằng localStorage hoặc bộ nhớ trình duyệt.
-- Khi nối backend NoSQL thật, các chức năng lưu slide, upload tài liệu và xóa tài liệu nên chuyển sang API.
+Sau đó mở trình duyệt tại:
+
+```text
+http://localhost:5173
+```
 
 
-## Cập nhật bổ sung cuối cùng
-- Khi chọn một ảnh trong slide, bảng Properties bên phải hiển thị nút この画像を背景に設定 ở dưới phần メモ.
-- Nút này giúp giáo viên dùng chính ảnh đã chọn làm hình nền của trang slide hiện tại.
-- Sau khi đặt làm hình nền, ảnh sẽ không còn là một đối tượng nổi trên slide nữa để tránh bị trùng hình.
-- Nếu muốn đổi nền, giáo viên có thể thêm/chọn ảnh khác rồi đặt lại làm nền.
-- Nếu muốn bỏ nền, giáo viên bấm 背景画像を解除.
+## Cập nhật v15
+
+### Nội dung đã sửa
+- Cập nhật thanh header theo yêu cầu mới của giao diện SmartSlide JP.
+- Đổi nút tạo slide trên header thành nút upload template.
+- Thêm biểu tượng kính lúp trong ô tìm kiếm toàn cục.
+- Bỏ nút logout khỏi header để giao diện gọn hơn.
+- Thêm lựa chọn ngôn ngữ Nhật / Nhật + Việt trực tiếp trên header.
+- Bỏ phần chọn ngôn ngữ khỏi trang Cài đặt.
+- Thiết kế lại trang My Slides theo dạng danh sách chữ nhật chuyên nghiệp hơn.
+- Bổ sung các thao tác quản lý slide: edit, download, copy, delete.
+- Bổ sung import/export slide, tìm kiếm, lọc và sắp xếp trong trang My Slides.
+
+### Ghi chú
+Các cập nhật này giúp giao diện giống hệ thống quản lý slide thực tế hơn và thuận tiện hơn cho giáo viên khi quản lý nhiều bộ slide.
+
+
+## Cập nhật v16
+
+### Nội dung đã sửa
+1. Căn chỉnh lại thanh trên cùng để ô tìm kiếm chiếm không gian còn lại và avatar nằm sát bên phải.
+2. Giữ nút upload template, ô chuyển ngôn ngữ và avatar cùng hàng, hạn chế khoảng trắng thừa.
+3. Sửa cơ chế truyền `setProfile` vào toàn bộ layout để chuyển đổi ngôn ngữ JP / JP + VI ổn định ở mọi màn hình.
+4. Thiết kế lại Dashboard theo dạng danh sách dự án gần đây giống mẫu giao diện:
+   - Có lời chào giáo viên.
+   - Có nút tạo slide mới.
+   - Có khu vực `最近のプロジェクト`.
+   - Các project/template hiển thị dạng card chữ nhật có preview xám, icon tài liệu, tên và thời gian chỉnh sửa.
+
+
+## Cập nhật v17
+
+### Nội dung đã sửa
+1. Sửa nút `DL` tại trang `マイスライド`:
+   - Trước đây tải file JSON.
+   - Hiện tại mặc định xuất và tải slide dưới dạng PDF.
+
+2. Khôi phục Dashboard:
+   - Bố cục Dashboard được đưa về dạng v15.
+   - Vẫn giữ thanh header mới đã ổn định ở v16.
+
+3. Giữ nguyên các phần đang hoạt động tốt:
+   - Ô tìm kiếm trên header.
+   - Nút upload template.
+   - Bộ chuyển ngôn ngữ JP / JP + VI.
+   - Avatar bên phải.
+
+
+## Cập nhật v18
+
+### Nội dung đã sửa
+1. Sửa chức năng upload template:
+   - Trước đây sau khi upload chỉ chuyển sang trang template nhưng template mới chưa xuất hiện.
+   - Hiện tại file upload sẽ được thêm vào danh sách template.
+
+2. Quy tắc template upload:
+   - Tên template luôn là `新しいテンプレート`.
+   - Có nhãn `アップロード`.
+   - Có nhiều slide mẫu để giáo viên tiếp tục chỉnh sửa.
+   - Có đầy đủ chức năng preview, sử dụng mẫu, chỉnh sửa text/ảnh, lưu và xuất file.
+
+3. Lưu trữ:
+   - Bản demo frontend lưu template upload trong `localStorage`.
+   - Khi tích hợp backend, phần này có thể nối với API upload template thật.

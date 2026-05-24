@@ -1,243 +1,168 @@
-# Đặc tả API đề xuất cho SmartSlide JP
+# Đặc tả dữ liệu và API đề xuất cho SmartSlide JP
 
-## 1. Mục tiêu
-Tài liệu này mô tả các API nên có khi chuyển bản frontend demo sang hệ thống thật có backend và cơ sở dữ liệu NoSQL.
+## 1. User
+Thông tin giáo viên nên lưu trong collection `users`.
 
-## 2. Nhóm API tài khoản
+Các trường chính:
+- `id`: mã người dùng
+- `name`: tên giáo viên
+- `email`: email đăng nhập
+- `passwordHash`: mật khẩu đã mã hóa
+- `mainLevel`: cấp độ giảng dạy chính
+- `language`: ngôn ngữ hiển thị, ví dụ `日本語` hoặc `日本語 + ベトナム語`
+- `createdAt`, `updatedAt`: thời gian tạo và cập nhật
 
-### Đăng nhập
-`POST /api/auth/login`
+API đề xuất:
+- `POST /api/auth/login`: đăng nhập
+- `POST /api/auth/register`: đăng ký
+- `POST /api/auth/forgot-password`: gửi email khôi phục mật khẩu
+- `GET /api/users/me`: lấy thông tin người dùng hiện tại
+- `PUT /api/users/me`: cập nhật thông tin cá nhân
 
-Body:
+## 2. Slide Deck
+Thông tin bộ slide nên lưu trong collection `slideDecks`.
+
+Cấu trúc đề xuất:
+
 ```json
 {
-  "email": "teacher@example.com",
-  "password": "password"
-}
-```
-
-Response:
-```json
-{
-  "token": "jwt_token",
-  "user": {
-    "id": "user_id",
-    "name": "Tue",
-    "email": "teacher@example.com",
-    "level": "N3/N4",
-    "language": "日本語"
-  }
-}
-```
-
-### Đăng ký
-`POST /api/auth/register`
-
-### Lấy thông tin người dùng hiện tại
-`GET /api/users/me`
-
-### Cập nhật hồ sơ giáo viên
-`PUT /api/users/me`
-
-Body:
-```json
-{
-  "name": "Tue",
-  "email": "teacher@example.com",
-  "level": "N3/N4",
-  "language": "日本語"
-}
-```
-
-## 3. Nhóm API template
-
-### Lấy danh sách template
-`GET /api/templates?keyword=&category=&level=`
-
-### Lấy chi tiết template
-`GET /api/templates/:id`
-
-Một template nên có cấu trúc:
-```json
-{
-  "id": "tpl_001",
+  "id": "deck_001",
+  "ownerId": "user_001",
   "title": "N3文法：〜てくる・〜ていく",
-  "category": "grammar",
-  "level": "N3",
-  "author": "佐々木先生",
-  "thumbnailUrl": "https://...",
-  "description": "...",
-  "tags": ["N3", "文法"],
-  "slidesData": []
-}
-```
-
-## 4. Nhóm API slide cá nhân
-
-### Lấy danh sách slide của tôi
-`GET /api/slides/my`
-
-### Tạo slide mới
-`POST /api/slides`
-
-### Cập nhật slide đã có
-`PUT /api/slides/:id`
-
-Điểm quan trọng: khi người dùng sửa slide cũ và bấm lưu, frontend phải gọi API cập nhật theo `id`, không gọi API tạo mới. Như vậy sẽ không bị sinh nhiều bản trùng lặp.
-
-### Xóa slide
-`DELETE /api/slides/:id`
-
-### Xuất slide sang PDF hoặc PPTX
-Có thể xử lý ở frontend như bản demo hoặc xử lý ở backend nếu muốn đảm bảo đồng nhất môi trường.
-
-Đề xuất nếu làm backend:
-`POST /api/slides/:id/export`
-
-Body:
-```json
-{
-  "format": "pdf"
-}
-```
-
-Response:
-```json
-{
-  "downloadUrl": "/exports/deck_id.pdf"
-}
-```
-
-Giá trị `format` có thể là:
-- `pdf`
-- `pptx`
-
-## 5. Cấu trúc slide đề xuất
-
-```json
-{
-  "id": "deck_id",
-  "ownerId": "user_id",
-  "title": "Tên bộ slide",
   "templateId": "tpl_001",
   "slides": [
     {
-      "id": "slide_id",
-      "title": "Tiêu đề trang",
-      "backgroundImage": "https://... hoặc đường dẫn ảnh nền đã upload",
+      "id": "slide_001",
+      "title": "こんにちは",
+      "backgroundImage": "",
       "elements": [
         {
-          "id": "element_text_id",
+          "id": "el_text_001",
           "type": "text",
-          "content": "Nội dung văn bản",
+      "isTitle": true,
           "x": 12,
-          "y": 30,
-          "w": 45,
-          "h": 16,
-          "fontSize": 18,
+          "y": 22,
+          "w": 54,
+          "h": 18,
+          "content": "こんにちは",
           "bold": true,
           "italic": false,
           "underline": false,
+          "fontSize": 32,
           "align": "left"
         },
         {
-          "id": "element_image_id",
+          "id": "el_img_001",
           "type": "image",
-          "src": "https://... hoặc đường dẫn file upload",
           "x": 10,
           "y": 48,
           "w": 42,
-          "h": 30
+          "h": 30,
+          "src": "https://example.com/image.jpg"
         }
       ]
     }
   ],
-  "createdAt": "2026-05-11T00:00:00.000Z",
-  "updatedAt": "2026-05-11T00:00:00.000Z"
+  "createdAt": "2026-05-13T00:00:00.000Z",
+  "updatedAt": "2026-05-13T00:00:00.000Z"
 }
 ```
 
-Ghi chú: trong frontend demo, `x`, `y`, `w`, `h` được lưu theo phần trăm kích thước canvas để dễ responsive và dễ xuất file. Trường `backgroundImage` lưu ảnh nền riêng của từng trang slide. Nếu không có nền thì để chuỗi rỗng hoặc bỏ qua trường này.
+API đề xuất:
+- `GET /api/slides`: lấy danh sách slide của giáo viên
+- `GET /api/slides/:id`: lấy chi tiết một bộ slide
+- `POST /api/slides`: tạo bộ slide mới
+- `PUT /api/slides/:id`: cập nhật bộ slide đã có
+- `DELETE /api/slides/:id`: xóa bộ slide
+- `POST /api/slides/:id/export`: xuất slide PDF/PPTX nếu xử lý ở backend
 
-## 6. Nhóm API upload
+## 3. Template
+Template nên lưu trong collection `templates`.
 
-### Upload ảnh dùng trong slide
-`POST /api/uploads/images`
+Các trường chính:
+- `id`
+- `title`
+- `teacher`
+- `level`
+- `category`
+- `tags`
+- `thumbnail`
+- `slidesData`: danh sách slide mẫu
 
-Form data:
-```text
-file: image file
-```
+API đề xuất:
+- `GET /api/templates`: lấy danh sách template
+- `GET /api/templates/:id`: lấy chi tiết template
 
-Response:
+## 4. Shared Materials
+Tài liệu giảng dạy nên lưu trong collection `materials`.
+
+Các trường chính:
+- `id`
+- `title`
+- `type`: PDF, image, text...
+- `level`
+- `teacher`
+- `fileUrl`
+- `createdAt`, `updatedAt`
+
+API đề xuất:
+- `GET /api/materials`: lấy danh sách tài liệu
+- `POST /api/materials`: upload tài liệu
+- `GET /api/materials/:id/preview`: xem trước tài liệu
+- `GET /api/materials/:id/download`: tải tài liệu
+- `DELETE /api/materials/:id`: xóa tài liệu
+
+## 5. Upload
+API upload nên dùng cho ảnh trong slide và tài liệu giảng dạy.
+
+API đề xuất:
+- `POST /api/uploads/images`: upload ảnh dùng trong slide
+- `POST /api/uploads/materials`: upload tài liệu giảng dạy
+
+Kết quả trả về nên có:
+- `fileUrl`
+- `fileName`
+- `mimeType`
+- `size`
+
+## Cập nhật v12
+
+### Thuộc tính màu chữ trong slide elements
+Đối tượng text trong `slides.elements` có thêm trường:
+
 ```json
 {
-  "url": "/uploads/images/file_name.png"
+  "type": "text",
+      "isTitle": true,
+  "content": "こんにちは",
+  "fontSize": 18,
+  "bold": false,
+  "italic": false,
+  "underline": false,
+  "align": "left",
+  "color": "#201827"
 }
 ```
 
-### Upload tài liệu giảng dạy
-`POST /api/materials/upload`
+Trường `color` dùng để lưu màu chữ của từng khung văn bản. Frontend sử dụng trường này khi hiển thị trong editor, trình chiếu và khi xuất PDF/PPTX.
 
-Form data:
-```text
-file: pdf, image, text hoặc tài liệu khác
-```
+### Cấu hình ngôn ngữ người dùng
+Trường `language` trong user profile hỗ trợ 2 giá trị:
 
-Response:
 ```json
-{
-  "id": "material_id",
-  "title": "Tên tài liệu",
-  "type": "PDF",
-  "fileUrl": "/materials/file.pdf",
-  "previewUrl": "/materials/file.pdf",
-  "mimeType": "application/pdf"
-}
+"日本語"
 ```
 
-## 7. Nhóm API tài liệu chia sẻ
+hoặc:
 
-### Lấy danh sách tài liệu
-`GET /api/materials?keyword=&type=&level=`
-
-### Xem trước tài liệu
-`GET /api/materials/:id/preview`
-
-Với PDF, API có thể trả về chính file PDF hoặc một URL preview.
-
-### Tải tài liệu
-`GET /api/materials/:id/download`
-
-Yêu cầu backend trả đúng header để tránh lỗi file tải về không mở được:
-
-```http
-Content-Type: application/pdf
-Content-Disposition: attachment; filename="n5_vocab_image_set.pdf"
+```json
+"日本語 + Tiếng Việt"
 ```
 
-Nên dùng tên file ASCII ở phần `filename` để tránh lỗi mã hóa tên file trên một số máy.
+Khi chọn `日本語 + Tiếng Việt`, frontend sẽ hiển thị tiếng Nhật kèm chú thích tiếng Việt bên dưới ở các khu vực giao diện chính.
 
 
-## Ghi chú về thứ tự và xóa trang slide
-- Thứ tự các trang slide được xác định theo vị trí của từng phần tử trong mảng `slides`.
-- Khi giáo viên kéo thả đổi thứ tự trang, frontend gửi lại mảng `slides` đã được sắp xếp mới.
-- Khi giáo viên xóa một trang, frontend gửi lại mảng `slides` sau khi đã loại bỏ trang đó.
-- Backend NoSQL chỉ cần lưu nguyên mảng `slides` theo thứ tự mới để lần mở sau hiển thị đúng.
-
-
-## Bổ sung API tài liệu
-- `POST /api/materials/upload`: tải tài liệu từ thiết bị lên hệ thống.
-- `GET /api/materials/:id/preview`: xem trước tài liệu.
-- `GET /api/materials/:id/download`: tải tài liệu xuống.
-- `DELETE /api/materials/:id`: xóa tài liệu khỏi danh sách chia sẻ.
-
-## Bổ sung API tạo slide mới
-- `POST /api/slides/blank`: tạo bộ slide trắng gồm 1 trang với tiêu đề mặc định Konnichiwa.
-- `POST /api/slides/from-template/:templateId`: tạo bộ slide mới từ template đã chọn.
-
-
-## Bổ sung dữ liệu hình nền trang slide
-- Mỗi phần tử trong mảng `slides` có thể có trường `backgroundImage`.
-- Khi giáo viên chọn một ảnh và bấm この画像を背景に設定, frontend cập nhật `backgroundImage` của trang slide hiện tại.
-- Nếu backend xử lý xuất PDF/PPTX, cần render `backgroundImage` trước rồi mới render title và các elements lên trên.
+## Ghi chú cập nhật tiêu đề slide
+- Mỗi slide nên có một element loại `text` với `isTitle: true`.
+- Element này dùng làm tiêu đề slide, đồng thời vẫn hỗ trợ các thuộc tính chỉnh sửa như `fontSize`, `bold`, `italic`, `underline`, `align`, `color`, `x`, `y`, `w`, `h`.
+- Khi người dùng đổi nội dung của title element, trường `title` của slide cần được cập nhật tương ứng để danh sách slide bên trái hiển thị đúng tên.
