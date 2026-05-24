@@ -9,10 +9,10 @@ const TEXT_PLACEHOLDER = 'ここにテキストを入力してください';
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=900&auto=format&fit=crop';
 
 const COLOR_PALETTE = [
-  { title: '自動 / Tự động', colors: ['#201827'] },
-  { title: 'テーマカラー / Màu chủ đề', colors: ['#000000','#444444','#777777','#0f172a','#155e75','#ea580c','#166534','#0ea5e9','#a21caf','#4ade80'] },
-  { title: '標準カラー / Màu chuẩn', colors: ['#dc2626','#ef4444','#f59e0b','#facc15','#84cc16','#22c55e','#06b6d4','#2563eb','#1e3a8a','#7c3aed'] },
-  { title: '淡い色 / Màu nhạt', colors: ['#fecaca','#fed7aa','#fef3c7','#d9f99d','#bbf7d0','#bae6fd','#bfdbfe','#ddd6fe','#fbcfe8','#e5e7eb'] },
+  { jp: '自動', vi: 'Tự động', colors: ['#201827'] },
+  { jp: 'テーマカラー', vi: 'Màu chủ đề', colors: ['#000000','#444444','#777777','#0f172a','#155e75','#ea580c','#166534','#0ea5e9','#a21caf','#4ade80'] },
+  { jp: '標準カラー', vi: 'Màu chuẩn', colors: ['#dc2626','#ef4444','#f59e0b','#facc15','#84cc16','#22c55e','#06b6d4','#2563eb','#1e3a8a','#7c3aed'] },
+  { jp: '淡い色', vi: 'Màu nhạt', colors: ['#fecaca','#fed7aa','#fef3c7','#d9f99d','#bbf7d0','#bae6fd','#bfdbfe','#ddd6fe','#fbcfe8','#e5e7eb'] },
 ];
 
 function createTitleElement(title, index = 0) {
@@ -151,42 +151,12 @@ function SlideView({ slide, className = '' }) {
           textAlign: el.align || 'left',
           color: el.color || '#201827',
         }}
-      >{el.content}</div> : <img src={el.src || DEFAULT_IMAGE} alt="slide" />}
+      >{el.content}</div> : <img src={el.src || DEFAULT_IMAGE} alt="スライド" />}
     </div>)}
   </div>;
 }
 
-function ThumbnailSlide({ slide }) {
-  if (!slide) return null;
-  return <div
-    className={`thumb-slide-preview ${slide.backgroundImage ? 'has-slide-background' : ''}`}
-    style={slide.backgroundImage ? { backgroundImage: `linear-gradient(rgba(255,255,255,.10), rgba(255,255,255,.10)), url(${slide.backgroundImage})` } : undefined}
-  >
-    {(slide.elements || []).map(el => <div
-      key={el.id}
-      className={`thumb-preview-el ${el.type === 'text' ? 'thumb-text-el' : 'thumb-image-el'}`}
-      style={{
-        left: `${el.x}%`,
-        top: `${el.y}%`,
-        width: `${el.w}%`,
-        height: `${el.h}%`,
-      }}
-    >
-      {el.type === 'text' ? <div
-        style={{
-          fontWeight: el.bold ? 800 : 400,
-          fontStyle: el.italic ? 'italic' : 'normal',
-          textDecoration: el.underline ? 'underline' : 'none',
-          fontSize: `${Math.max(3, (Number(el.fontSize || 18) * 0.13))}px`,
-          textAlign: el.align || 'left',
-          color: el.color || '#201827',
-        }}
-      >{el.content}</div> : <img src={el.src || DEFAULT_IMAGE} alt="" draggable="false" />}
-    </div>)}
-  </div>;
-}
-
-function PresentationOverlay({ slides, index, setIndex, close }) {
+function PresentationOverlay({ slides, index, setIndex, close, profile }) {
   const currentSlide = slides[index] || slides[0];
   function handleClick(e) {
     if (e.target.closest('.presentation-exit')) return;
@@ -197,7 +167,7 @@ function PresentationOverlay({ slides, index, setIndex, close }) {
   return <div className="presentation-overlay" onClick={handleClick}>
     <SlideView slide={currentSlide} />
     <div className="presentation-counter">{index + 1} / {slides.length}</div>
-    <button className="presentation-exit" onClick={close}><X size={18}/> 終了</button>
+    <button className="presentation-exit" onClick={close}><X size={18}/> <Bi jp="終了" vi="Thoát" profile={profile}/></button>
   </div>;
 }
 
@@ -559,18 +529,6 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
     } finally {
       setSaving(false);
     }
-      id,
-      title: slides[0]?.title || '無題のスライド',
-      slides,
-      templateId: template?.id || null,
-      updatedAt: new Date().toLocaleString('ja-JP'),
-    };
-    const exists = existing.some(d => d.id === id);
-    const next = exists ? existing.map(d => d.id === id ? deck : d) : [deck, ...existing];
-    localStorage.setItem('smartslide_saved_decks', JSON.stringify(next.slice(0, 20)));
-    setCurrentDeckId(id);
-    setNotice(exists ? '既存のスライドを更新しました。' : '新しいスライドとして保存しました。');
->>>>>>> origin/sakura/frontend
   }
 
   async function waitForImages(node) {
@@ -672,7 +630,7 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
       const pptx = new pptxgen();
       pptx.layout = 'LAYOUT_WIDE';
       pptx.author = profile?.name || 'SmartSlide JP';
-      pptx.subject = 'SmartSlide JP exported slide deck';
+      pptx.subject = 'SmartSlide JP スライド出力';
       pptx.title = slides[0]?.title || 'SmartSlide JP';
       slideImages.forEach(image => {
         const pptSlide = pptx.addSlide();
@@ -692,8 +650,12 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
   return <AppLayout nav={nav} active="slides" profile={profile} setProfile={setProfile} compactSidebar>
     <section className="editor">
       <aside className="slide-list">
-        <button className="outline full" onClick={addSlide}><Plus size={15}/><Bi jp="スライド追加" vi="Thêm slide" profile={profile}/></button>
-        <p className="slide-order-hint"><Bi jp="スライドをドラッグして順番を変更できます。不要なページはゴミ箱で削除できます。" vi="Kéo slide để đổi thứ tự. Có thể xóa trang không cần bằng biểu tượng thùng rác." profile={profile}/></p>
+        <h2 className="editor-page-title"><Bi jp="新しいスライドを作成" vi="Tạo bài trình chiếu mới" profile={profile}/></h2>
+        <p className="editor-page-subtitle"><Bi jp="テンプレートまたは空白から編集を開始できます。" vi="Bắt đầu chỉnh sửa từ mẫu có sẵn hoặc trang trống." profile={profile}/></p>
+        <label className="editor-name-label"><Bi jp="スライド名" vi="Tên bài trình chiếu" profile={profile}/></label>
+        <input className="editor-name-input" value={slideName} onChange={e => setSlideName(e.target.value)} placeholder="例：N3文法レッスン - 助詞" />
+        <button className="outline full" onClick={addSlide}><Plus size={15}/><Bi jp="スライド追加" vi="Thêm trang" profile={profile}/></button>
+        <p className="slide-order-hint"><Bi jp="スライドをドラッグして順番を変更できます。不要なページはゴミ箱で削除できます。" vi="Kéo trang để đổi thứ tự. Có thể xóa trang không cần bằng biểu tượng thùng rác." profile={profile}/></p>
         {slides.map((s, i) => <div
           key={s.id}
           className={i === active ? 'thumb active' : 'thumb'}
@@ -705,8 +667,8 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
           onDragEnd={() => { slideDragRef.current = null; }}
           title="ドラッグして順番を変更"
         >
-          <div className="thumb-preview-wrap"><ThumbnailSlide slide={s} /></div>
-          <span className="thumb-number">{i + 1}</span>
+          <span>{i + 1}</span>
+          <b>{s.title}</b>
           <button
             className="slide-delete-btn"
             title="このスライドを削除"
@@ -732,7 +694,7 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
             <button
               type="button"
               className="text-color-tool palette-toggle"
-              title="文字色 / Màu chữ"
+              title={biText(profile, '文字色', 'Màu chữ')}
               disabled={selectedElement?.type !== 'text'}
               onClick={() => {
                 if (selectedElement?.type !== 'text') return setNotice('先にテキストボックスを選択してください。');
@@ -743,8 +705,8 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
               <b className="color-preview" style={{ backgroundColor: selectedElement?.color || '#201827' }}></b>
             </button>
             {colorPaletteOpen && selectedElement?.type === 'text' && <div className="color-palette-panel">
-              {COLOR_PALETTE.map(group => <div className="color-group" key={group.title}>
-                <p>{group.title}</p>
+              {COLOR_PALETTE.map(group => <div className="color-group" key={group.jp}>
+                <p><Bi jp={group.jp} vi={group.vi} profile={profile}/></p>
                 <div className="color-grid">
                   {group.colors.map(color => <button
                     key={color}
@@ -757,7 +719,7 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
               </div>)}
               <div className="custom-color-row">
                 <label>
-                  その他の色 / Màu khác
+                  <Bi jp="その他の色" vi="Màu khác" profile={profile}/>
                   <input type="color" value={selectedElement?.color || '#201827'} onChange={e => applyTextColor(e.target.value)} />
                 </label>
               </div>
@@ -767,14 +729,14 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
           <button className={selectedElement?.align === 'center' ? 'active-tool align-tool' : 'align-tool'} onClick={() => setTextFormat({ align: 'center' })} disabled={selectedElement?.type !== 'text'}>中</button>
           <button className={selectedElement?.align === 'right' ? 'active-tool align-tool' : 'align-tool'} onClick={() => setTextFormat({ align: 'right' })} disabled={selectedElement?.type !== 'text'}>右</button>
           <button onClick={save} disabled={saving}><Save size={16}/>{saving ? '保存中...' : <Bi jp="保存" vi="Lưu" profile={profile}/>}</button>
-          <button onClick={() => nav('slides')}><Bi jp="マイスライドへ" vi="Về slide của tôi" profile={profile}/></button>
+          <button onClick={() => nav('slides')}><Bi jp="マイスライドへ" vi="Về bài trình chiếu của tôi" profile={profile}/></button>
           <button className="presentation-btn" onClick={startPresentation}><Play size={16}/><Bi jp="プレゼン" vi="Trình chiếu" profile={profile}/></button>
           <div className="export-tools">
             <select value={exportFormat} onChange={e => setExportFormat(e.target.value)} aria-label="出力形式">
               <option value="pdf">PDF</option>
               <option value="pptx">PPTX</option>
             </select>
-            <button className="download-deck" onClick={exportDeck}><Download size={16}/><Bi jp="スライド出力" vi="Xuất slide" profile={profile}/></button>
+            <button className="download-deck" onClick={exportDeck}><Download size={16}/><Bi jp="スライド出力" vi="Xuất bài trình chiếu" profile={profile}/></button>
           </div>
           <input ref={fileInputRef} className="hidden-file" type="file" accept="image/*" onChange={uploadImage} />
         </div>
@@ -830,6 +792,7 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
         index={presentationIndex}
         setIndex={setPresentationIndex}
         close={closePresentation}
+        profile={profile}
       />}
     </section>
   </AppLayout>;

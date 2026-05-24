@@ -19,6 +19,7 @@ export function TemplateDetailPage({ nav, templateId, profile, setProfile }) {
 
   if (loading) return <AppLayout nav={nav} profile={profile} setProfile={setProfile}><div className="empty">読み込み中...</div></AppLayout>;
   if (!t) return <AppLayout nav={nav} profile={profile} setProfile={setProfile}><div className="empty"><Bi jp="該当なし" vi="Không có kết quả" profile={profile}/></div></AppLayout>;
+
   return <AppLayout nav={nav} active="templates" profile={profile} setProfile={setProfile}>
     <button className="back" onClick={() => nav('templates')}><ChevronLeft size={16}/><Bi jp="戻る" vi="Quay lại" profile={profile}/></button>
     <section className="detail-card">

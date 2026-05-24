@@ -23,8 +23,12 @@ export function DashboardPage({ nav, profile, setProfile }) {
 
   return <AppLayout nav={nav} active="dashboard" profile={profile} setProfile={setProfile}>
     <section className="dashboard-hero">
-      <div><p className="eyebrow"><Bi jp="今日の授業準備" vi="Chuẩn bị bài giảng hôm nay" profile={profile}/></p><h1>{profile.name}先生、こんにちは！</h1><p><Bi jp="テンプレートを選んで、すぐに教材スライドを作成できます。" vi="Chọn mẫu slide để tạo giáo án nhanh chóng." profile={profile}/></p></div>
-      <button className="pink" onClick={() => nav('editor', { deckId: null })}><Plus size={16}/> <Bi jp="新しいスライド" vi="Slide mới" profile={profile}/></button>
+      <div className="dashboard-hero-copy">
+        <p className="eyebrow"><Bi jp="ホームページ" vi="Trang chủ" profile={profile}/></p>
+        <h1>{biText(profile, `${profile.name || '先生'}さん、おかえりなさい`, `Chào mừng ${profile.name || 'thầy/cô'} quay lại`)}</h1>
+        <p><Bi jp="テンプレートを選んで、すぐに教材スライドを作成できます。" vi="Chọn mẫu để tạo bài trình chiếu giảng dạy nhanh chóng." profile={profile}/></p>
+      </div>
+      <button className="pink dashboard-new-btn" onClick={() => nav('editor', { deckId: null })}><Plus size={16}/> <Bi jp="スライド作成" vi="Tạo bài trình chiếu" profile={profile}/></button>
     </section>
     <section className="stats-grid">
       <div className="stat-card"><LayoutTemplate/><span><Bi jp="テンプレート" vi="Mẫu bài trình chiếu" profile={profile}/></span><b>{templates.length}</b></div>

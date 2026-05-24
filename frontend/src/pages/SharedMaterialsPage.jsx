@@ -83,16 +83,21 @@ export function SharedMaterialsPage({ nav, profile, setProfile }) {
   return <AppLayout nav={nav} active="shared" profile={profile} setProfile={setProfile}>
     <section className="page-head material-head">
       <div>
-        <h1><Bi jp="共有教材" vi="Tài liệu chung" profile={profile}/></h1>
-        <p><Bi jp="チーム内で共有されたPDF教材を検索・プレビュー・ダウンロードできます。" vi="Có thể tìm kiếm, xem trước và tải xuống tài liệu PDF được chia sẻ trong nhóm." profile={profile}/></p>
+        <h1><Bi jp="共有教材" vi="Tài liệu cộng đồng" profile={profile}/></h1>
+        <p><Bi jp="共有された資料を検索・プレビュー・ダウンロードできます。" vi="Bạn có thể tìm kiếm, xem trước và tải xuống tài liệu được chia sẻ." profile={profile}/></p>
       </div>
       <div className="head-actions">
-        <button className="pink" onClick={() => fileInputRef.current?.click()}><Upload size={16}/><Bi jp="教材をアップロード" vi="Tải tài liệu lên" profile={profile}/></button>
+        <button className="pink" onClick={() => fileInputRef.current?.click()}><Upload size={16}/><Bi jp="アップロード" vi="Tải lên" profile={profile}/></button>
         <input ref={fileInputRef} type="file" onChange={uploadMaterial} hidden />
       </div>
     </section>
 
-    <div className="filters"><input value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder={biText(profile, '共有教材を検索', 'Tìm tài liệu chung')} /></div>
+    <div className="filters shared-filters">
+      <input value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder={biText(profile, 'コミュニティスライドを検索', 'Tìm tài liệu cộng đồng...')} />
+      <select><option>{biText(profile, 'すべてのレベル', 'Tất cả cấp độ')}</option><option>N1</option><option>N2</option><option>N3</option><option>N4</option><option>N5</option></select>
+      <select><option>{biText(profile, 'すべての種類', 'Tất cả loại')}</option><option>{biText(profile, 'スライド', 'Bài trình chiếu')}</option><option>PDF</option></select>
+      <select><option>{biText(profile, '人気順', 'Theo độ phổ biến')}</option><option>{biText(profile, '新着順', 'Mới nhất')}</option></select>
+    </div>
     {notice && <div className="notice spaced">{notice}</div>}
 
     <section className="panel material-panel">

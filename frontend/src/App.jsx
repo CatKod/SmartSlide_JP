@@ -13,7 +13,7 @@ import { SlideEditorPage } from './pages/SlideEditorPage.jsx';
 import { getUser, clearToken } from './api.js';
 import './styles.css';
 
-const defaultProfile = { name: 'Tuệ', email: 'teacher@example.com', level: 'N3/N4', language: '日本語' };
+const defaultProfile = { name: 'Tuệ', email: 'teacher@example.com', level: 'N3/N4', title: '日本語教師', language: '日本語' };
 
 function App() {
   const [route, setRoute] = useState('login');

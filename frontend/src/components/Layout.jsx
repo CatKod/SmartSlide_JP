@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { BookOpen, FileText, GalleryHorizontal, House, LayoutDashboard, Search, Settings, Share2, SlidersHorizontal, Upload, UserRound } from 'lucide-react';
+import { FileText, GalleryHorizontal, House, Search, Settings, Share2, Upload, UserRound } from 'lucide-react';
 import { Bi, biText } from '../i18n.jsx';
 import { LanguageToggleButton } from './LanguageToggleButton.jsx';
 
@@ -51,10 +51,10 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
   const [keyword, setKeyword] = useState('');
   const uploadRef = useRef(null);
   const items = [
-    ['dashboard', 'ダッシュボード', 'Bảng điều khiển', LayoutDashboard],
-    ['slides', 'マイスライド', 'Slide của tôi', BookOpen],
-    ['templates', 'テンプレート', 'Mẫu slide', GalleryHorizontal],
-    ['shared', '共有教材', 'Tài liệu chung', Share2],
+    ['dashboard', 'ダッシュボード', 'Bảng điều khiển', House],
+    ['slides', 'マイスライド', 'Bài trình chiếu', FileText],
+    ['templates', 'ギャラリー', 'Thư viện', GalleryHorizontal],
+    ['shared', '共有資料', 'Tài liệu chung', Share2],
     ['settings', '設定', 'Cài đặt', Settings],
   ];
 
@@ -69,8 +69,7 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
     const uploadedTemplate = createUploadedTemplate(file);
     const nextTemplates = [uploadedTemplate, ...getUploadedTemplates()];
     saveUploadedTemplates(nextTemplates);
-    alert(`${file.name} をテンプレートとして追加しました。
-Template mới đã được thêm vào danh sách.`);
+    alert(biText(profile, `${file.name} をテンプレートとして追加しました。`, `Đã thêm ${file.name} vào danh sách mẫu.`));
     e.target.value = '';
     nav('templates', { uploadedTemplateId: uploadedTemplate.id });
   }

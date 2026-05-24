@@ -18,6 +18,7 @@ export function TemplateListPage({ nav, initialKeyword = '', profile, setProfile
     window.addEventListener('smartslide-template-uploaded', refresh);
     return () => window.removeEventListener('smartslide-template-uploaded', refresh);
   }, []);
+
   // Fetch templates từ backend
   useEffect(() => {
     let cancelled = false;
