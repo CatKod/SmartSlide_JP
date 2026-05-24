@@ -47,7 +47,7 @@ function saveUploadedTemplates(templates) {
 }
 
 
-export function AppLayout({ children, nav, active = 'templates', profile, setProfile, compactSidebar = false, editorTopbar = false }) {
+export function AppLayout({ children, nav, active = 'templates', profile, setProfile, compactSidebar = false, editorTopbar = false, topbarLeft = null }) {
   const [keyword, setKeyword] = useState('');
   const uploadRef = useRef(null);
   const items = [
@@ -81,6 +81,7 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
     </aside>
     <main className="main">
       <header className={editorTopbar ? 'topbar topbar-editor' : 'topbar'}>
+        {editorTopbar && topbarLeft}
         {!editorTopbar && <form className="top-search-form" onSubmit={submitSearch}>
           <Search size={17} className="search-icon" />
           <input className="global-search" value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder={biText(profile, 'キーワード、文法、トピックで検索...', 'Tìm kiếm từ khóa, ngữ pháp, chủ đề...')} />

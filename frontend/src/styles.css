@@ -779,12 +779,13 @@
   margin:0;
 }
 .editor-page .editor-canvas-panel .design-canvas{
-  width:min(100%, calc((100vh - 148px) * 16 / 9));
+  width:min(100%, calc((100vh - 215px) * 16 / 9));
   height:auto;
   min-height:0;
   aspect-ratio:16 / 9;
   margin:0 auto;
   border-radius:12px;
+  border: 4px solid rgba(0, 0, 0, 0.35);
 }
 
 @media(max-width:1220px){
@@ -932,5 +933,47 @@
   .editor-page .editor-toolbar .history-tool{
     flex:1;
     min-width:0;
+  }
+}
+
+/* Custom Topbar Deck Name styling */
+.topbar-deck-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: auto;
+}
+.topbar-deck-name-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #6b7280;
+  white-space: nowrap;
+}
+.topbar-deck-name-input {
+  height: 30px;
+  padding: 4px 10px;
+  border: 1px solid #dfe3eb;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  width: 320px;
+  background: #f8fafc;
+  color: #1f2937;
+  transition: all 0.15s ease;
+}
+.topbar-deck-name-input:focus {
+  outline: none;
+  border-color: #ec4899;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.12);
+}
+@media(max-width: 760px) {
+  .topbar-deck-name-wrap {
+    width: 100%;
+    margin-bottom: 6px;
+    order: -1;
+  }
+  .topbar-deck-name-input {
+    width: 100%;
   }
 }

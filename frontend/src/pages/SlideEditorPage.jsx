@@ -216,6 +216,15 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
     historyRef.current = { slides, active, selectedId, slideName };
   }, [slides, active, selectedId, slideName]);
 
+  // Tự động tắt thông báo sau 3 giây
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => {
+      setNotice('');
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
   // Load slide/template data từ backend
   useEffect(() => {
     let cancelled = false;
@@ -311,9 +320,26 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
         redoEdit();
         return;
       }
-      if (!selectedId) return;
+
+      // Hỗ trợ chuyển slide bằng phím mũi tên lên/xuống khi không gõ chữ
       const tag = document.activeElement?.tagName?.toLowerCase();
       const isTyping = tag === 'textarea' || tag === 'input';
+      if (!isTyping) {
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setActive(prev => Math.max(0, prev - 1));
+          setSelectedId(null);
+          return;
+        }
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setActive(prev => Math.min(slides.length - 1, prev + 1));
+          setSelectedId(null);
+          return;
+        }
+      }
+
+      if (!selectedId) return;
       if (!isTyping && (e.key === 'Delete' || e.key === 'Backspace')) {
         e.preventDefault();
         deleteSelected();
@@ -321,7 +347,15 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
     }
     window.addEventListener('keydown', keydown);
     return () => window.removeEventListener('keydown', keydown);
-  }, [selectedId, active, history]);
+  }, [selectedId, active, history, slides]);
+
+  // Tự động cuộn slide đang hoạt động vào vùng nhìn thấy của thanh bên
+  useEffect(() => {
+    const activeThumb = document.querySelector('.slide-list-items .thumb.active');
+    if (activeThumb) {
+      activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [active]);
 
   useEffect(() => {
     if (!presenting) return;
@@ -792,31 +826,42 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
 
   if (!current) return null;
 
-  return <AppLayout nav={nav} active="slides" profile={profile} setProfile={setProfile} compactSidebar editorTopbar>
+  return <AppLayout
+    nav={nav}
+    active="slides"
+    profile={profile}
+    setProfile={setProfile}
+    compactSidebar
+    editorTopbar
+    topbarLeft={
+      <div className="topbar-deck-name-wrap">
+        <span className="topbar-deck-name-label">
+          <Bi jp="スライド名:" vi="Tên bài trình chiếu:" profile={profile}/>
+        </span>
+        <input
+          className="topbar-deck-name-input"
+          value={slideName}
+          onChange={e => {
+            beginContinuousHistory('deck-name');
+            setSlideName(e.target.value);
+          }}
+          onBlur={() => endContinuousHistory('deck-name')}
+          placeholder={biText(profile, '新しいスライド', 'Bài trình chiếu mới')}
+        />
+      </div>
+    }
+  >
     <div className="editor-page">
       <section className="editor-workspace">
         <aside className="slide-list editor-panel">
           <div className="panel-heading">
             <div className="panel-heading-copy">
               <p className="panel-heading-kicker"><Bi jp="スライド一覧" vi="Danh sách slide" profile={profile}/></p>
-              <h2 className="editor-page-title"><Bi jp="ページ" vi="Trang" profile={profile}/></h2>
-              <p className="editor-page-subtitle"><Bi jp="ページを並べ替えて、1枚ずつ編集できます。" vi="Sắp xếp trang và chỉnh từng slide một." profile={profile}/></p>
             </div>
             <div className="panel-heading-actions">
               <button className="outline full add-slide-btn" onClick={addSlide}><Plus size={15}/><Bi jp="追加" vi="Thêm" profile={profile}/></button>
             </div>
           </div>
-          <label className="editor-name-label"><Bi jp="スライド名" vi="Tên bài trình chiếu" profile={profile}/></label>
-          <input
-            className="editor-name-input"
-            value={slideName}
-            onChange={e => {
-              beginContinuousHistory('deck-name');
-              setSlideName(e.target.value);
-            }}
-            onBlur={() => endContinuousHistory('deck-name')}
-            placeholder="例：N3文法レッスン - 助詞"
-          />
           <p className="slide-order-hint"><Bi jp="スライドをドラッグして順番を変更できます。不要なページはゴミ箱で削除できます。" vi="Kéo trang để đổi thứ tự. Có thể xóa trang không cần bằng biểu tượng thùng rác." profile={profile}/></p>
           <div className="slide-list-items">
             {slides.map((s, i) => <div
