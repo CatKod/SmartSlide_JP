@@ -17,6 +17,10 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ error: 'ユーザーが見つかりません (User not found)' });
     }
 
+    if (user.status === 'locked') {
+      return res.status(403).json({ error: 'このアカウントはロックされています (Account is locked)' });
+    }
+
     req.user = user;
     req.userId = user._id;
     next();

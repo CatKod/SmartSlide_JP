@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const ActivityLog = require('../models/ActivityLog');
+const Setting = require('../models/Setting');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
@@ -57,6 +58,14 @@ router.post(
     try {
       const validationError = handleValidation(req, res);
       if (validationError) return;
+
+      // Check if registration is allowed by system settings
+      const setting = await Setting.findOne();
+      if (setting && !setting.allowRegistration) {
+        return res.status(403).json({
+          error: '新規登録は現在停止されています (Registration is currently disabled)',
+        });
+      }
 
       const { username, name, email, password, role } = req.body;
 
@@ -129,6 +138,12 @@ router.post(
       if (!user) {
         return res.status(401).json({
           error: 'メールアドレスまたはパスワードが間違っています (Invalid credentials)',
+        });
+      }
+
+      if (user.status === 'locked') {
+        return res.status(403).json({
+          error: 'このアカウントはロックされています (Account is locked)',
         });
       }
 

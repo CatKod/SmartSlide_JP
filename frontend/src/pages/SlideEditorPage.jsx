@@ -559,18 +559,6 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
     } finally {
       setSaving(false);
     }
-      id,
-      title: slides[0]?.title || '無題のスライド',
-      slides,
-      templateId: template?.id || null,
-      updatedAt: new Date().toLocaleString('ja-JP'),
-    };
-    const exists = existing.some(d => d.id === id);
-    const next = exists ? existing.map(d => d.id === id ? deck : d) : [deck, ...existing];
-    localStorage.setItem('smartslide_saved_decks', JSON.stringify(next.slice(0, 20)));
-    setCurrentDeckId(id);
-    setNotice(exists ? '既存のスライドを更新しました。' : '新しいスライドとして保存しました。');
->>>>>>> origin/sakura/frontend
   }
 
   async function waitForImages(node) {

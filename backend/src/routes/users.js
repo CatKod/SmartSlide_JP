@@ -32,6 +32,8 @@ router.put(
     body('preferences').optional().isObject(),
     body('preferences.theme').optional().isIn(['light', 'dark']),
     body('preferences.language').optional().trim(),
+    body('password').optional().isLength({ min: 6 }),
+    body('currentPassword').optional().trim(),
   ],
   async (req, res) => {
     try {
@@ -40,29 +42,40 @@ router.put(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const allowedFields = ['name', 'email', 'level', 'language', 'preferences'];
-      const updates = {};
-      for (const field of allowedFields) {
-        if (req.body[field] !== undefined) {
-          updates[field] = req.body[field];
+      const user = req.user;
+
+      // Handle password update if password is provided
+      if (req.body.password) {
+        if (!req.body.currentPassword) {
+          return res.status(400).json({ error: '現在のパスワードを入力してください (Current password required)' });
         }
+        const isMatch = await user.comparePassword(req.body.currentPassword);
+        if (!isMatch) {
+          return res.status(400).json({ error: '現在のパスワードが違います (Incorrect current password)' });
+        }
+        user.password_hash = req.body.password; // pre-save hook will hash it
       }
 
-      // Kiểm tra email trùng khi đổi email
-      if (updates.email && updates.email !== req.user.email) {
-        const existingUser = await User.findOne({ email: updates.email });
+      // Check email uniqueness if changing email
+      if (req.body.email && req.body.email !== user.email) {
+        const existingUser = await User.findOne({ email: req.body.email });
         if (existingUser) {
           return res.status(409).json({ error: 'このメールアドレスは既に使用されています' });
         }
+        user.email = req.body.email;
       }
 
-      const user = await User.findByIdAndUpdate(req.userId, updates, {
-        new: true,
-        runValidators: true,
-      });
+      // Update remaining fields
+      if (req.body.name !== undefined) user.name = req.body.name;
+      if (req.body.level !== undefined) user.level = req.body.level;
+      if (req.body.language !== undefined) user.language = req.body.language;
+      if (req.body.preferences !== undefined) user.preferences = req.body.preferences;
+
+      await user.save();
 
       res.json({ user: user.toJSON() });
     } catch (err) {
+      console.error('Update profile error:', err);
       res.status(500).json({ error: 'サーバーエラー' });
     }
   }
