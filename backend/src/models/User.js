@@ -20,6 +20,8 @@ const userSchema = new mongoose.Schema(
     },
     level: { type: String, default: 'N5' },
     language: { type: String, default: '日本語' },
+    title: { type: String, default: '' },
+    avatarUrl: { type: String, default: '' },
     preferences: {
       theme: { type: String, default: 'light' },
       language: { type: String, default: 'ja' },

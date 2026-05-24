@@ -29,6 +29,8 @@ router.put(
     body('email').optional().trim().isEmail().normalizeEmail(),
     body('level').optional().trim(),
     body('language').optional().trim(),
+    body('title').optional().trim(),
+    body('avatarUrl').optional().trim(),
     body('preferences').optional().isObject(),
     body('preferences.theme').optional().isIn(['light', 'dark']),
     body('preferences.language').optional().trim(),
@@ -40,7 +42,7 @@ router.put(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const allowedFields = ['name', 'email', 'level', 'language', 'preferences'];
+      const allowedFields = ['name', 'email', 'level', 'language', 'preferences', 'title', 'avatarUrl'];
       const updates = {};
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) {
