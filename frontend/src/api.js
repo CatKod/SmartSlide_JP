@@ -95,6 +95,13 @@ export async function apiGetTemplateDetail(id) {
   return apiFetch(`/templates/${id}`);
 }
 
+export async function apiCreateTemplate(templateData) {
+  return apiFetch('/templates', {
+    method: 'POST',
+    body: JSON.stringify(templateData),
+  });
+}
+
 // ===== Slides (Presentations) =====
 export async function apiGetMySlides() {
   return apiFetch('/slides/my');

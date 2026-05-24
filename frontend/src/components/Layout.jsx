@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { FileText, GalleryHorizontal, House, Search, Settings, Share2, Upload, UserRound } from 'lucide-react';
 import { Bi, biText } from '../i18n.jsx';
 import { LanguageToggleButton } from './LanguageToggleButton.jsx';
+import { apiCreateTemplate } from '../api.js';
 
 function createUploadedTemplate(file) {
   const now = Date.now();
@@ -63,15 +64,19 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
     nav('templates', { keyword });
   }
 
-  function handleTemplateUpload(e) {
+  async function handleTemplateUpload(e) {
     const file = e.target.files?.[0];
     if (!file) return;
     const uploadedTemplate = createUploadedTemplate(file);
-    const nextTemplates = [uploadedTemplate, ...getUploadedTemplates()];
-    saveUploadedTemplates(nextTemplates);
-    alert(biText(profile, `${file.name} をテンプレートとして追加しました。`, `Đã thêm ${file.name} vào danh sách mẫu.`));
+    try {
+      const res = await apiCreateTemplate(uploadedTemplate);
+      alert(biText(profile, `${file.name} をテンプレートとして追加しました。`, `Đã thêm ${file.name} vào danh sách mẫu.`));
+      window.dispatchEvent(new CustomEvent('smartslide-template-uploaded', { detail: res.template }));
+      nav('templates', { uploadedTemplateId: res.template._id });
+    } catch (err) {
+      alert(biText(profile, 'アップロードに失敗しました。', 'Tải mẫu lên thất bại: ') + err.message);
+    }
     e.target.value = '';
-    nav('templates', { uploadedTemplateId: uploadedTemplate.id });
   }
 
   return <div className={compactSidebar ? 'app-shell compact-sidebar' : 'app-shell'}>

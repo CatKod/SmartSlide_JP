@@ -63,4 +63,19 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
+/**
+ * POST /api/templates
+ * Tạo mới một template trong thư viện (database)
+ */
+router.post('/', auth, async (req, res) => {
+  try {
+    const template = new Template(req.body);
+    await template.save();
+    res.status(201).json({ template });
+  } catch (err) {
+    console.error('Create template error:', err);
+    res.status(500).json({ error: 'サーバーエラー' });
+  }
+});
+
 module.exports = router;

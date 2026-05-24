@@ -3,7 +3,6 @@ import { AppLayout } from '../components/Layout.jsx';
 import { TemplateCard } from '../components/TemplateCard.jsx';
 import { apiGetTemplates } from '../api.js';
 import { templateCategories } from '../data/mockData.js';
-import { getUploadedTemplates } from '../data/uploadedTemplates.js';
 import { Bi, biText } from '../i18n.jsx';
 
 export function TemplateListPage({ nav, initialKeyword = '', profile, setProfile }) {
@@ -23,28 +22,21 @@ export function TemplateListPage({ nav, initialKeyword = '', profile, setProfile
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    const fetchCategory = category === 'uploaded' ? 'all' : category;
-    apiGetTemplates({ keyword, category: fetchCategory })
+    apiGetTemplates({ keyword, category })
       .then(data => {
         if (!cancelled) setTemplates(data.templates || []);
       })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [keyword, category]);
+  }, [keyword, category, version]);
 
   const allTemplates = useMemo(() => {
-    const localUploaded = getUploadedTemplates();
-    const normalizedBackend = templates.map(t => ({ ...t, id: t._id }));
-    return [...localUploaded, ...normalizedBackend];
-  }, [templates, version]);
+    return templates.map(t => ({ ...t, id: t._id }));
+  }, [templates]);
 
   const filtered = useMemo(() => {
     return allTemplates.filter(t => {
-      if (category === 'uploaded') {
-        const localIds = new Set(getUploadedTemplates().map(lt => lt.id));
-        return localIds.has(t.id) && (!keyword || `${t.title} ${t.level} ${t.category} ${t.tags?.join(' ')}`.toLowerCase().includes(keyword.toLowerCase()));
-      }
       const matchesCategory = category === 'all' || t.category === category;
       const target = `${t.title} ${t.level} ${t.category} ${(t.tags || []).join(' ')}`.toLowerCase();
       const matchesKeyword = !keyword || target.includes(keyword.toLowerCase());
