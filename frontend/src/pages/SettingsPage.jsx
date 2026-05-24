@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { AppLayout } from '../components/Layout.jsx';
-import { apiUpdateMe, saveUser, apiLogout } from '../api.js';
-import { Camera, KeyRound, Save, LogOut } from 'lucide-react';
+import { apiUpdateMe, saveUser } from '../api.js';
+import { Camera, KeyRound, Save } from 'lucide-react';
 import { Bi, biText, resolveLanguage } from '../i18n.jsx';
 
 export function SettingsPage({ nav, profile, setProfile }) {
@@ -66,10 +66,9 @@ export function SettingsPage({ nav, profile, setProfile }) {
         email: form.email,
         level: form.level,
         language: form.language,
-        title: form.title,
-        avatarUrl: form.avatarUrl,
       });
-      const updatedUser = res.user;
+      // Merge extra local fields (like title, avatarUrl)
+      const updatedUser = { ...res.user, title: form.title, avatarUrl: form.avatarUrl };
       saveUser(updatedUser);
       setProfile(updatedUser);
       window.dispatchEvent(new CustomEvent('smartslide-language-change', { detail: updatedUser }));
@@ -100,13 +99,6 @@ export function SettingsPage({ nav, profile, setProfile }) {
     localStorage.setItem('smartslide_password_updated_at', new Date().toISOString());
     setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     setPasswordNotice(biText(profile, 'パスワードを更新しました。', 'Đã cập nhật mật khẩu.'));
-  }
-
-  async function handleLogout() {
-    if (window.confirm(biText(profile, 'ログアウトしますか？', 'Bạn có chắc chắn muốn đăng xuất không?'))) {
-      await apiLogout();
-      nav('login');
-    }
   }
 
   return <AppLayout nav={nav} active="settings" profile={profile} setProfile={setProfile}>
@@ -212,39 +204,6 @@ export function SettingsPage({ nav, profile, setProfile }) {
         </div>
         <div className="account-actions">
           <button className="outline password-update-btn" type="button" onClick={savePassword}><KeyRound size={15}/><Bi jp="パスワードを更新" vi="Cập nhật mật khẩu" profile={profile}/></button>
-        </div>
-      </section>
-
-      <section className="account-panel" style={{ border: '1px solid #fee2e2', background: '#fffbeb' }}>
-        <h2 style={{ color: '#b91c1c' }}><Bi jp="ログアウト" vi="Đăng xuất tài khoản" profile={profile}/></h2>
-        <p style={{ color: '#7f1d1d', fontSize: '13px', margin: '4px 0 16px' }}>
-          <Bi jp="現在のデバイスから安全にログアウトします。" vi="Đăng xuất an toàn khỏi tài khoản của bạn trên thiết bị này." profile={profile}/>
-        </p>
-        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-          <button
-            type="button"
-            onClick={handleLogout}
-            style={{
-              height: '36px',
-              padding: '0 16px',
-              borderRadius: '10px',
-              fontWeight: 800,
-              fontSize: '13px',
-              border: '1px solid #dc2626',
-              background: '#fff',
-              color: '#dc2626',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseOver={e => { e.currentTarget.style.background = '#fef2f2'; }}
-            onMouseOut={e => { e.currentTarget.style.background = '#fff'; }}
-          >
-            <LogOut size={15}/>
-            <Bi jp="ログアウト" vi="Đăng xuất" profile={profile}/>
-          </button>
         </div>
       </section>
     </div>

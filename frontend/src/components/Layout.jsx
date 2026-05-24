@@ -1,8 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { FileText, GalleryHorizontal, House, Search, Settings, Share2, Upload, UserRound } from 'lucide-react';
+import { FileText, GalleryHorizontal, House, Search, Settings, Share2, ShieldCheck, Upload, UserRound } from 'lucide-react';
 import { Bi, biText } from '../i18n.jsx';
 import { LanguageToggleButton } from './LanguageToggleButton.jsx';
-import { apiCreateTemplate } from '../api.js';
 
 function createUploadedTemplate(file) {
   const now = Date.now();
@@ -48,7 +47,7 @@ function saveUploadedTemplates(templates) {
 }
 
 
-export function AppLayout({ children, nav, active = 'templates', profile, setProfile, compactSidebar = false, editorTopbar = false, topbarLeft = null }) {
+export function AppLayout({ children, nav, active = 'templates', profile, setProfile, compactSidebar = false, editorTopbar = false }) {
   const [keyword, setKeyword] = useState('');
   const uploadRef = useRef(null);
   const items = [
@@ -56,6 +55,7 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
     ['slides', 'マイスライド', 'Bài trình chiếu', FileText],
     ['templates', 'ギャラリー', 'Thư viện', GalleryHorizontal],
     ['shared', '共有資料', 'Tài liệu chung', Share2],
+    ...(profile?.role === 'admin' ? [['admin_dashboard', '管理', 'Quản trị', ShieldCheck]] : []),
     ['settings', '設定', 'Cài đặt', Settings],
   ];
 
@@ -64,19 +64,15 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
     nav('templates', { keyword });
   }
 
-  async function handleTemplateUpload(e) {
+  function handleTemplateUpload(e) {
     const file = e.target.files?.[0];
     if (!file) return;
     const uploadedTemplate = createUploadedTemplate(file);
-    try {
-      const res = await apiCreateTemplate(uploadedTemplate);
-      alert(biText(profile, `${file.name} をテンプレートとして追加しました。`, `Đã thêm ${file.name} vào danh sách mẫu.`));
-      window.dispatchEvent(new CustomEvent('smartslide-template-uploaded', { detail: res.template }));
-      nav('templates', { uploadedTemplateId: res.template._id });
-    } catch (err) {
-      alert(biText(profile, 'アップロードに失敗しました。', 'Tải mẫu lên thất bại: ') + err.message);
-    }
+    const nextTemplates = [uploadedTemplate, ...getUploadedTemplates()];
+    saveUploadedTemplates(nextTemplates);
+    alert(biText(profile, `${file.name} をテンプレートとして追加しました。`, `Đã thêm ${file.name} vào danh sách mẫu.`));
     e.target.value = '';
+    nav('templates', { uploadedTemplateId: uploadedTemplate.id });
   }
 
   return <div className={compactSidebar ? 'app-shell compact-sidebar' : 'app-shell'}>
@@ -86,7 +82,6 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
     </aside>
     <main className="main">
       <header className={editorTopbar ? 'topbar topbar-editor' : 'topbar'}>
-        {editorTopbar && topbarLeft}
         {!editorTopbar && <form className="top-search-form" onSubmit={submitSearch}>
           <Search size={17} className="search-icon" />
           <input className="global-search" value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder={biText(profile, 'キーワード、文法、トピックで検索...', 'Tìm kiếm từ khóa, ngữ pháp, chủ đề...')} />

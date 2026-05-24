@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BookOpen, CheckCircle2, Sparkles, Wand2 } from 'lucide-react';
-import { apiLogin, saveUser } from '../api.js';
+import { apiAdminBootstrapLogin, apiLogin, saveUser } from '../api.js';
 import { Bi, biText } from '../i18n.jsx';
 import { LanguageToggleButton } from '../components/LanguageToggleButton.jsx';
 
@@ -17,6 +17,7 @@ export function LoginPage({ nav, profile, setProfile }) {
   }
 
   const defaultEmail = regEmail || 'teacher@example.com';
+  // Admin demo: admin@example.com / password (FE sẽ tự tạo admin bằng API register nếu backend chưa có tài khoản này).
   const defaultPassword = regPassword || 'password';
 
   async function submit(e){
@@ -30,9 +31,11 @@ export function LoginPage({ nav, profile, setProfile }) {
     setLoading(true);
     setError('');
     try {
-      const res = await apiLogin(email, password);
+      const res = email === 'admin@example.com'
+        ? await apiAdminBootstrapLogin(email, password)
+        : await apiLogin(email, password);
       setProfile(res.user);
-      nav('dashboard');
+      nav(res.user?.role === 'admin' ? 'admin_dashboard' : 'dashboard');
     } catch (err) {
       setError(err.message);
     } finally {
