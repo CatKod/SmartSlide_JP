@@ -8,6 +8,14 @@ const Material = require('../models/Material');
 
 const router = express.Router();
 
+function resolveUploadedFile(fileUrl = '') {
+  return path.join(process.cwd(), String(fileUrl).replace(/^\/+/, ''));
+}
+
+function safeHeaderFilename(fileName, fallback) {
+  return String(fileName || fallback || 'document').replace(/[^\x20-\x7E]|["\r\n]/g, '_');
+}
+
 /**
  * POST /api/uploads/images
  * Upload ảnh dùng trong slide
@@ -155,12 +163,14 @@ router.get('/materials/:id/preview', auth, async (req, res) => {
       return res.status(404).json({ error: '資料が見つかりません' });
     }
 
-    const filePath = path.join(process.cwd(), material.fileUrl);
+    const filePath = resolveUploadedFile(material.fileUrl);
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: 'ファイルが見つかりません' });
     }
 
+    const safeFilename = safeHeaderFilename(material.fileName, `document${path.extname(material.fileUrl)}`);
     res.setHeader('Content-Type', material.mimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${safeFilename}"`);
     res.sendFile(filePath);
   } catch (err) {
     res.status(500).json({ error: 'サーバーエラー' });
@@ -178,13 +188,13 @@ router.get('/materials/:id/download', auth, async (req, res) => {
       return res.status(404).json({ error: '資料が見つかりません' });
     }
 
-    const filePath = path.join(process.cwd(), material.fileUrl);
+    const filePath = resolveUploadedFile(material.fileUrl);
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: 'ファイルが見つかりません' });
     }
 
     // Dùng tên file ASCII để tránh lỗi encoding
-    const safeFilename = material.fileName || `document${path.extname(material.fileUrl)}`;
+    const safeFilename = safeHeaderFilename(material.fileName, `document${path.extname(material.fileUrl)}`);
     res.setHeader('Content-Type', material.mimeType || 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
     res.sendFile(filePath);
@@ -233,7 +243,7 @@ router.delete('/materials/:id', auth, async (req, res) => {
     }
 
     // Xóa file vật lý nếu tồn tại
-    const filePath = path.join(process.cwd(), material.fileUrl);
+    const filePath = resolveUploadedFile(material.fileUrl);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
