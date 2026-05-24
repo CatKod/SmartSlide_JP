@@ -20,11 +20,6 @@ const userSchema = new mongoose.Schema(
     },
     level: { type: String, default: 'N5' },
     language: { type: String, default: '日本語' },
-    status: {
-      type: String,
-      enum: ['active', 'locked'],
-      default: 'active',
-    },
     preferences: {
       theme: { type: String, default: 'light' },
       language: { type: String, default: 'ja' },

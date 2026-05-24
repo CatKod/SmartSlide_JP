@@ -13,7 +13,6 @@ const templateSchema = new mongoose.Schema(
     thumbnailUrl: { type: String },
     description: { type: String },
     tags: [{ type: String }],
-    isPublic: { type: Boolean, default: true },
     slidesData: [
       {
         id: String,

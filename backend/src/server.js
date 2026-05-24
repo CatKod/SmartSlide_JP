@@ -12,8 +12,6 @@ const userRoutes = require('./routes/users');
 const templateRoutes = require('./routes/templates');
 const slideRoutes = require('./routes/slides');
 const uploadRoutes = require('./routes/uploads');
-const adminRoutes = require('./routes/admin');
-const aiRoutes = require('./routes/ai');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -43,8 +41,6 @@ app.use('/api/users', userRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/slides', slideRoutes);
 app.use('/api/uploads', uploadRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/ai', aiRoutes);
 // Material routes được mount trong uploads.js tại /api/uploads/materials
 // Thêm alias để match spec
 app.use('/api', uploadRoutes);
