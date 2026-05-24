@@ -265,19 +265,19 @@ export function MySlidesPage({ nav, profile, setProfile }) {
   return <AppLayout nav={nav} active="slides" profile={profile} setProfile={setProfile}>
     <section className="page-head split-head myslides-head">
       <div>
-        <h1><Bi jp="マイスライド" vi="Bài trình chiếu" profile={profile}/></h1>
-        <p><Bi jp="作成・保存したプレゼンテーションを管理できます。" vi="Bạn có thể quản lý các bài thuyết trình đã tạo và lưu." profile={profile}/></p>
+        <h1><Bi jp="マイスライド" vi="Slide của tôi" profile={profile}/></h1>
+        <p><Bi jp="作成・保存した教材スライドを管理できます。" vi="Quản lý các slide giáo án đã tạo và lưu." profile={profile}/></p>
       </div>
       <div className="myslides-head-actions">
         <input ref={importRef} type="file" accept=".json" hidden onChange={importSlides}/>
-        <button className="outline" onClick={() => importRef.current?.click()}><FileUp size={16}/><Bi jp="インポート" vi="Nhập dữ liệu" profile={profile}/></button>
-        <button className="outline" onClick={exportAll}><FileDown size={16}/><Bi jp="エクスポート" vi="Xuất dữ liệu" profile={profile}/></button>
-        <button className="pink" onClick={() => nav('editor', { deckId: null })}><Plus size={16}/><Bi jp="スライド作成" vi="Tạo bài trình chiếu" profile={profile}/></button>
+        <button className="outline" onClick={() => importRef.current?.click()}><FileUp size={16}/><Bi jp="インポート" vi="Import" profile={profile}/></button>
+        <button className="outline" onClick={exportAll}><FileDown size={16}/><Bi jp="エクスポート" vi="Export" profile={profile}/></button>
+        <button className="pink" onClick={() => nav('editor', { deckId: null })}><Plus size={16}/><Bi jp="新規作成" vi="Tạo mới" profile={profile}/></button>
       </div>
     </section>
 
     <section className="myslides-controls">
-      <div className="myslides-search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={biText(profile, 'プレゼンテーションを検索', 'Tìm kiếm bài thuyết trình...')} /></div>
+      <div className="myslides-search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={biText(profile, 'スライドを検索', 'Tìm slide')} /></div>
       <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
         <option value="all">{biText(profile, 'すべての状態', 'Tất cả trạng thái')}</option>
         <option value="保存済み">{biText(profile, '保存済み', 'Đã lưu')}</option>
@@ -292,9 +292,10 @@ export function MySlidesPage({ nav, profile, setProfile }) {
 
     <section className="slide-table-wrap">
       <div className="slide-table-head">
-        <span><Bi jp="プレゼン名" vi="Tên bài trình chiếu" profile={profile}/></span>
+        <span><Bi jp="スライド名" vi="Tên slide" profile={profile}/></span>
         <span><Bi jp="状態" vi="Trạng thái" profile={profile}/></span>
         <span><Bi jp="最終更新" vi="Cập nhật" profile={profile}/></span>
+        <span><Bi jp="ページ数" vi="Số trang" profile={profile}/></span>
         <span><Bi jp="操作" vi="Thao tác" profile={profile}/></span>
       </div>
       {loading ? <div className="empty">読み込み中...</div> : (
@@ -305,6 +306,7 @@ export function MySlidesPage({ nav, profile, setProfile }) {
             </button>
             <div><span className="status-pill saved">{deck.status}</span></div>
             <div className="muted">{formatDeckDate(deck)}</div>
+            <div className="muted">{deck.slides?.length || 0}</div>
             <div className="row-actions icon-actions">
               <button className="outline icon-only" title={biText(profile, '編集', 'Sửa')} aria-label={biText(profile, '編集', 'Sửa')} onClick={() => nav('editor', { deckId: deck._id })}><Edit3 size={14}/></button>
               <button className="outline icon-only" title={biText(profile, 'ダウンロード', 'Tải')} aria-label={biText(profile, 'ダウンロード', 'Tải')} onClick={() => downloadDeck(deck)}><Download size={14}/></button>

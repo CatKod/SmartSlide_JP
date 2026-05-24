@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { AppLayout } from '../components/Layout.jsx';
 import { apiUpdateMe, saveUser } from '../api.js';
 import { Camera, KeyRound, Save } from 'lucide-react';
@@ -80,33 +80,30 @@ export function SettingsPage({ nav, profile, setProfile }) {
     }
   }
 
-  function savePassword() {
-    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      setPasswordNotice(biText(profile, 'すべてのパスワード項目を入力してください。', 'Vui lòng nhập đầy đủ các trường mật khẩu.'));
+  async function savePassword() {
+    if (!passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordNotice(biText(profile, '新しいパスワードを入力してください。', 'Vui lòng nhập mật khẩu mới.'));
       return;
     }
-
-    if (passwordForm.newPassword.length < 8) {
-      setPasswordNotice(biText(profile, '新しいパスワードは8文字以上で入力してください。', 'Mật khẩu mới cần có ít nhất 8 ký tự.'));
-      return;
-    }
-
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordNotice(biText(profile, '新しいパスワードが一致しません。', 'Mật khẩu mới không khớp.'));
+      setPasswordNotice(biText(profile, 'パスワードが一致しません。', 'Mật khẩu mới không khớp.'));
       return;
     }
-
-    localStorage.setItem('smartslide_password_updated_at', new Date().toISOString());
-    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    setPasswordNotice(biText(profile, 'パスワードを更新しました。', 'Đã cập nhật mật khẩu.'));
+    setPasswordNotice('');
+    try {
+      await apiUpdateMe({
+        currentPassword: passwordForm.currentPassword,
+        password: passwordForm.newPassword,
+      });
+      setPasswordNotice(biText(profile, 'パスワードを更新しました。', 'Đã cập nhật mật khẩu.'));
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (err) {
+      setPasswordNotice(err.message);
+    }
   }
 
   return <AppLayout nav={nav} active="settings" profile={profile} setProfile={setProfile}>
-    <section className="page-head account-page-head">
-      <h1><Bi jp="アカウント設定" vi="Cài đặt tài khoản" profile={profile}/></h1>
-      <p><Bi jp="プロフィール情報とセキュリティを管理します。" vi="Quản lý thông tin hồ sơ và bảo mật." profile={profile}/></p>
-    </section>
-
+    <section className="page-head"><h1><Bi jp="設定" vi="Cài đặt" profile={profile}/></h1><p><Bi jp="プロフィールと授業作成の基本情報を設定できます。" vi="Bạn có thể thiết lập hồ sơ và thông tin cơ bản khi tạo bài giảng." profile={profile}/></p></section>
     <div className="account-settings">
       <section className="account-panel">
         <h2><Bi jp="プロフィール情報" vi="Thông tin hồ sơ" profile={profile}/></h2>

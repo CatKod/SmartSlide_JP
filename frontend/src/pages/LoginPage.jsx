@@ -48,13 +48,9 @@ export function LoginPage({ nav, profile, setProfile }) {
       <div className="hero-glow one" />
       <div className="hero-glow two" />
       <div className="hero-content">
-        <div className="auth-mark">
-          <h1 className="auth-brand-title">SmartSlide JP</h1>
-          <span className="auth-brand-underline" />
-        </div>
-        <p className="auth-page-kicker"><Bi jp="ログイン" vi="Đăng nhập" profile={profile}/></p>
-        <h2><Bi jp="おかえりなさい" vi="Chào mừng quay lại" profile={profile}/></h2>
-        <p><Bi jp="メールアドレスとパスワードでログインしてください。外部アカウントでもログインできます。" vi="Đăng nhập bằng địa chỉ email và mật khẩu. Bạn cũng có thể dùng tài khoản liên kết." profile={profile}/></p>
+        <div className="hero-badge"><Sparkles size={16}/> 日本語授業サポート</div>
+        <h1>ベトナムの日本語教師を支援</h1>
+        <p>テンプレートから教材スライドをすばやく作成できます。授業準備、共有教材、マイスライドを一つの画面で管理しましょう。</p>
         <div className="hero-image-mosaic">
           <img src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=700&auto=format&fit=crop" alt="教材イメージ" />
           <img src="https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=700&auto=format&fit=crop" alt="授業イメージ" />

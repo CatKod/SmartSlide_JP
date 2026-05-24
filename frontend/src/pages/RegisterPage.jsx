@@ -16,7 +16,6 @@ export function RegisterPage({ nav, profile, setProfile }) {
     const email = String(data.get('email') || '').trim();
     const password = String(data.get('password') || '');
     const confirmPassword = String(data.get('confirmPassword') || '');
-
     if (!name) return setMessage(biText(profile, '氏名を入力してください。', 'Vui lòng nhập họ và tên.'));
     if (!email) return setMessage(biText(profile, 'メールアドレスを入力してください。', 'Vui lòng nhập địa chỉ email.'));
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setMessage(biText(profile, 'メールアドレスの形式が正しくありません。', 'Định dạng địa chỉ email không đúng.'));
@@ -39,7 +38,6 @@ export function RegisterPage({ nav, profile, setProfile }) {
       setLoading(false);
     }
   }
-
   return <div className="auth-page">
     <div className="auth-language-switch-wrap">
       <LanguageToggleButton profile={profile} setProfile={setProfile} className="auth-language-switch" />
@@ -53,7 +51,7 @@ export function RegisterPage({ nav, profile, setProfile }) {
           <span className="auth-brand-underline" />
         </div>
         <div className="hero-badge"><Sparkles size={16}/> <Bi jp="日本語授業サポート" vi="Hỗ trợ lớp tiếng Nhật" profile={profile}/></div>
-        <h2><Bi jp="ベトナム của 日本語教師を支援" vi="Hỗ trợ giáo viên tiếng Nhật tại Việt Nam" profile={profile}/></h2>
+        <h2><Bi jp="ベトナムの日本語教師を支援" vi="Hỗ trợ giáo viên tiếng Nhật tại Việt Nam" profile={profile}/></h2>
         <p><Bi jp="テンプレートから教材スライドをすばやく作成できます。授業準備、共有教材、マイスライドを一つの画面で管理しましょう。" vi="Tạo bài trình chiếu giảng dạy nhanh từ mẫu có sẵn. Quản lý chuẩn bị bài, tài liệu chung và bài của bạn trong một màn hình." profile={profile}/></p>
         <div className="hero-image-mosaic">
           <img src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=700&auto=format&fit=crop" alt="教材イメージ" />
@@ -61,41 +59,17 @@ export function RegisterPage({ nav, profile, setProfile }) {
           <img src="https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=700&auto=format&fit=crop" alt="学習イメージ" />
         </div>
         <div className="hero-preview-card">
-          <div className="mini-slide pink-mini"><BookOpen size={22}/><b>N3 文法</b><span>例文・練習問題</span></div>
-          <div className="mini-slide blue-mini"><Wand2 size={22}/><b>AI補助</b><span>教材作成を効率化</span></div>
-          <div className="mini-slide green-mini"><CheckCircle2 size={22}/><b>共有</b><span>チームで再利用</span></div>
+          <div className="mini-slide pink-mini"><BookOpen size={22}/><b>テンプレート</b><span>すぐ使える教材</span></div>
+          <div className="mini-slide blue-mini"><Wand2 size={22}/><b>編集</b><span>本文・画像を変更</span></div>
+          <div className="mini-slide green-mini"><CheckCircle2 size={22}/><b>保存</b><span>マイスライドへ追加</span></div>
         </div>
       </div>
     </section>
     <form className="auth-card" onSubmit={submit}>
-      <h2><Bi jp="アカウント作成" vi="Tạo tài khoản" profile={profile}/></h2>
-      <p className="register-subtitle"><Bi jp="アカウントを作成して、教材スライドの管理を始めましょう。" vi="Tạo tài khoản để bắt đầu quản lý bài trình chiếu giảng dạy." profile={profile}/></p>
-
-      <label><Bi jp="フルネーム" vi="Họ và tên" profile={profile}/></label>
-      <input name="name" placeholder="田中先生" />
-
-      <label><Bi jp="メールアドレス" vi="Địa chỉ email" profile={profile}/></label>
-      <input name="email" type="email" placeholder="teacher@example.com" />
-
-      <label><Bi jp="パスワード" vi="Mật khẩu" profile={profile}/></label>
-      <input name="password" type="password" placeholder="••••••••" />
-      <small className="password-hint"><Bi jp="8文字以上で入力してください" vi="Vui lòng nhập ít nhất 8 ký tự" profile={profile}/></small>
-
-      <label><Bi jp="パスワード確認" vi="Xác nhận mật khẩu" profile={profile}/></label>
-      <input name="confirmPassword" type="password" placeholder="••••••••" />
-
-      <div className="checkbox-agree">
-        <input
-          type="checkbox"
-          id="agree"
-          checked={agreed}
-          onChange={(e) => setAgreed(e.target.checked)}
-        />
-        <label htmlFor="agree">
-          <Bi jp="同意します" vi="Tôi đồng ý với" profile={profile}/><span className="agree-links"><button type="button" className="text-link"><Bi jp="利用規約" vi="Điều khoản sử dụng" profile={profile}/></button><Bi jp="と" vi="và" profile={profile}/><button type="button" className="text-link"><Bi jp="プライバシーポリシー" vi="Chính sách bảo mật" profile={profile}/></button></span>
-        </label>
-      </div>
-
+      <h2>新規アカウント作成</h2><label>名前</label><input name="name" placeholder="Tuệ先生" />
+      <label>メール</label><input name="email" type="email" placeholder="teacher@example.com" />
+      <label>パスワード</label><input name="password" type="password" placeholder="8文字以上" />
+      <label>パスワード確認</label><input name="confirmPassword" type="password" placeholder="もう一度入力してください" />
       {message && <p className="error">{message}</p>}
       <button className="pink full auth-submit" disabled={loading}>{loading ? '登録中...' : <Bi jp="アカウント作成" vi="Tạo tài khoản" profile={profile}/>}</button>
 
