@@ -10,20 +10,22 @@ import { SettingsPage } from './pages/SettingsPage.jsx';
 import { TemplateListPage } from './pages/TemplateListPage.jsx';
 import { TemplateDetailPage } from './pages/TemplateDetailPage.jsx';
 import { SlideEditorPage } from './pages/SlideEditorPage.jsx';
+import { AdminDashboardPage } from './pages/AdminDashboardPage.jsx';
+import { AdminUsersPage } from './pages/AdminUsersPage.jsx';
+import { AdminTemplatesPage } from './pages/AdminTemplatesPage.jsx';
+import { AdminSettingsPage } from './pages/AdminSettingsPage.jsx';
+import { getUser, clearToken } from './api.js';
 import './styles.css';
 
-const defaultProfile = { name: 'Tuệ', email: 'teacher@example.com', level: 'N3/N4', language: '日本語' };
+const defaultProfile = { name: 'Tuệ', email: 'teacher@example.com', level: 'N3/N4', title: '日本語教師', language: '日本語' };
 
 function App() {
   const [route, setRoute] = useState('login');
-  const [selectedTemplateId, setSelectedTemplateId] = useState('tpl_001');
+  const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [editingDeckId, setEditingDeckId] = useState(null);
   const [globalKeyword, setGlobalKeyword] = useState('');
   const [profile, setProfile] = useState(() => {
-    const saved = localStorage.getItem('smartslide_profile');
-    if (!saved) return defaultProfile;
-    const parsed = JSON.parse(saved);
-    return { ...parsed, language: parsed.language === '日本語 + ベトナム語' ? '日本語 + Tiếng Việt' : (parsed.language || '日本語') };
+    return getUser() || defaultProfile;
   });
 
   useEffect(() => {
@@ -43,14 +45,22 @@ function App() {
       if (Object.prototype.hasOwnProperty.call(payload, 'deckId')) setEditingDeckId(payload.deckId);
       if (next === 'editor' && !Object.prototype.hasOwnProperty.call(payload, 'deckId')) setEditingDeckId(null);
       if (typeof payload.keyword === 'string') setGlobalKeyword(payload.keyword);
+      // Logout → clear session
+      if (next === 'login') {
+        clearToken();
+      }
       setRoute(next);
     };
 
     const layoutProps = { nav, profile, setProfile };
 
-    if (route === 'login') return <LoginPage nav={nav} />;
-    if (route === 'register') return <RegisterPage nav={nav} />;
-    if (route === 'forgot') return <ForgotPasswordPage nav={nav} />;
+    if (route === 'login') return <LoginPage nav={nav} profile={profile} setProfile={setProfile} />;
+    if (route === 'register') return <RegisterPage nav={nav} profile={profile} setProfile={setProfile} />;
+    if (route === 'forgot') return <ForgotPasswordPage nav={nav} profile={profile} setProfile={setProfile} />;
+    if (route === 'admin_dashboard') return <AdminDashboardPage {...layoutProps} />;
+    if (route === 'admin_users') return <AdminUsersPage {...layoutProps} />;
+    if (route === 'admin_templates') return <AdminTemplatesPage {...layoutProps} />;
+    if (route === 'admin_settings') return <AdminSettingsPage {...layoutProps} />;
     if (route === 'dashboard') return <DashboardPage {...layoutProps} />;
     if (route === 'slides') return <MySlidesPage {...layoutProps} />;
     if (route === 'shared') return <SharedMaterialsPage {...layoutProps} />;
