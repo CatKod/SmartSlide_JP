@@ -1,6 +1,8 @@
 import React, { useRef, useState } from 'react';
-import { BookOpen, Globe2, LayoutDashboard, Search, Settings, SlidersHorizontal, Upload, UserRound } from 'lucide-react';
+import { FileText, GalleryHorizontal, House, Search, Settings, Share2, Upload, UserRound } from 'lucide-react';
 import { Bi, biText } from '../i18n.jsx';
+import { LanguageToggleButton } from './LanguageToggleButton.jsx';
+import { apiCreateTemplate } from '../api.js';
 
 function createUploadedTemplate(file) {
   const now = Date.now();
@@ -46,14 +48,14 @@ function saveUploadedTemplates(templates) {
 }
 
 
-export function AppLayout({ children, nav, active = 'templates', profile, setProfile, compactSidebar = false }) {
+export function AppLayout({ children, nav, active = 'templates', profile, setProfile, compactSidebar = false, editorTopbar = false, topbarLeft = null }) {
   const [keyword, setKeyword] = useState('');
   const uploadRef = useRef(null);
   const items = [
-    ['dashboard', 'ダッシュボード', 'Bảng điều khiển', LayoutDashboard],
-    ['slides', 'マイスライド', 'Slide của tôi', BookOpen],
-    ['templates', 'テンプレート', 'Mẫu slide', Search],
-    ['shared', '共有教材', 'Tài liệu chung', SlidersHorizontal],
+    ['dashboard', 'ダッシュボード', 'Bảng điều khiển', House],
+    ['slides', 'マイスライド', 'Bài trình chiếu', FileText],
+    ['templates', 'ギャラリー', 'Thư viện', GalleryHorizontal],
+    ['shared', '共有資料', 'Tài liệu chung', Share2],
     ['settings', '設定', 'Cài đặt', Settings],
   ];
 
@@ -62,23 +64,19 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
     nav('templates', { keyword });
   }
 
-  function updateLanguage(language) {
-    const next = { ...(profile || {}), language };
-    localStorage.setItem('smartslide_profile', JSON.stringify(next));
-    window.dispatchEvent(new CustomEvent('smartslide-language-change', { detail: next }));
-    if (setProfile) setProfile(next);
-  }
-
-  function handleTemplateUpload(e) {
+  async function handleTemplateUpload(e) {
     const file = e.target.files?.[0];
     if (!file) return;
     const uploadedTemplate = createUploadedTemplate(file);
-    const nextTemplates = [uploadedTemplate, ...getUploadedTemplates()];
-    saveUploadedTemplates(nextTemplates);
-    alert(`${file.name} をテンプレートとして追加しました。
-Template mới đã được thêm vào danh sách.`);
+    try {
+      const res = await apiCreateTemplate(uploadedTemplate);
+      alert(biText(profile, `${file.name} をテンプレートとして追加しました。`, `Đã thêm ${file.name} vào danh sách mẫu.`));
+      window.dispatchEvent(new CustomEvent('smartslide-template-uploaded', { detail: res.template }));
+      nav('templates', { uploadedTemplateId: res.template._id });
+    } catch (err) {
+      alert(biText(profile, 'アップロードに失敗しました。', 'Tải mẫu lên thất bại: ') + err.message);
+    }
     e.target.value = '';
-    nav('templates', { uploadedTemplateId: uploadedTemplate.id });
   }
 
   return <div className={compactSidebar ? 'app-shell compact-sidebar' : 'app-shell'}>
@@ -87,21 +85,18 @@ Template mới đã được thêm vào danh sách.`);
       <nav>{items.map(([key,label,vi,Icon]) => <button key={key} className={active===key?'nav active':'nav'} onClick={() => nav(key)}><Icon size={17}/><span className="nav-label"><Bi jp={label} vi={vi} profile={profile}/></span></button>)}</nav>
     </aside>
     <main className="main">
-      <header className="topbar">
-        <form className="top-search-form" onSubmit={submitSearch}>
+      <header className={editorTopbar ? 'topbar topbar-editor' : 'topbar'}>
+        {editorTopbar && topbarLeft}
+        {!editorTopbar && <form className="top-search-form" onSubmit={submitSearch}>
           <Search size={17} className="search-icon" />
           <input className="global-search" value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder={biText(profile, 'キーワード、文法、トピックで検索...', 'Tìm kiếm từ khóa, ngữ pháp, chủ đề...')} />
-        </form>
-        <input ref={uploadRef} type="file" accept=".json,.ppt,.pptx,.pdf" hidden onChange={handleTemplateUpload} />
-        <button className="pink top-upload" onClick={() => uploadRef.current?.click()}><Upload size={16}/><Bi jp="テンプレートをアップロード" vi="Upload template" profile={profile}/></button>
-        <div className="language-switch" title="Language">
-          <Globe2 size={15}/>
-          <select value={profile?.language || '日本語'} onChange={e=>updateLanguage(e.target.value)}>
-            <option value="日本語">JP</option>
-            <option value="日本語 + Tiếng Việt">JP + VI</option>
-          </select>
-        </div>
-        <button className="avatar" onClick={() => nav('settings')} aria-label="プロフィール"><UserRound size={18}/></button>
+        </form>}
+        {!editorTopbar && <input ref={uploadRef} type="file" accept=".json,.ppt,.pptx,.pdf" hidden onChange={handleTemplateUpload} />}
+        {!editorTopbar && <button className="pink top-upload" onClick={() => uploadRef.current?.click()}><Upload size={16}/><Bi jp="テンプレートをアップロード" vi="Tải mẫu lên" profile={profile}/></button>}
+        <LanguageToggleButton profile={profile} setProfile={setProfile} />
+        <button className="avatar" onClick={() => nav('settings')} aria-label="プロフィール">
+          {profile?.avatarUrl ? <img src={profile.avatarUrl} alt="" /> : <UserRound size={18}/>}
+        </button>
       </header>
       {children}
     </main>

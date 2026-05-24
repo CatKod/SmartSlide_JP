@@ -1,19 +1,22 @@
 import React from 'react';
 
-export function isBilingual(profileOrLanguage) {
+export function resolveLanguage(profileOrLanguage) {
   const language = typeof profileOrLanguage === 'string' ? profileOrLanguage : profileOrLanguage?.language;
-  return language === '日本語 + Tiếng Việt';
+  return language === 'Tiếng Việt' ? 'Tiếng Việt' : '日本語';
+}
+
+export function isVietnamese(profileOrLanguage) {
+  return resolveLanguage(profileOrLanguage) === 'Tiếng Việt';
 }
 
 export function Bi({ jp, vi, profile, className = '' }) {
-  if (!isBilingual(profile)) return <>{jp}</>;
-  return <span className={`bi-text ${className}`.trim()}><span>{jp}</span><small>{vi}</small></span>;
+  return <span className={className}>{isVietnamese(profile) ? vi : jp}</span>;
 }
 
 export function biText(profile, jp, vi) {
-  return isBilingual(profile) ? `${jp} / ${vi}` : jp;
+  return isVietnamese(profile) ? vi : jp;
 }
 
 export function biLines(profile, jp, vi) {
-  return isBilingual(profile) ? `${jp}\n${vi}` : jp;
+  return isVietnamese(profile) ? vi : jp;
 }

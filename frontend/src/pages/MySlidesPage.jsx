@@ -1,23 +1,17 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AppLayout } from '../components/Layout.jsx';
-import { defaultSlides } from '../data/mockData.js';
+import { apiGetMySlides, apiDeleteSlide, apiCloneSlide, apiCreateSlide } from '../api.js';
 import { Copy, Download, Edit3, FileDown, FileUp, Plus, Search, Trash2 } from 'lucide-react';
 import { Bi, biText } from '../i18n.jsx';
 
-function deckDate(deck) {
-  return deck.updatedAt || deck.createdAt || '未保存';
-}
-
-function exportJson(filename, data) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+function formatDeckDate(deck) {
+  const dateStr = deck.updatedAt || deck.createdAt;
+  if (!dateStr) return '未保存';
+  try {
+    return new Date(dateStr).toLocaleString('ja-JP');
+  } catch {
+    return dateStr;
+  }
 }
 
 function sanitizeFileName(name) {
@@ -131,50 +125,85 @@ function waitForNodeImages(node) {
   })));
 }
 
+function exportJson(filename, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function MySlidesPage({ nav, profile, setProfile }) {
-  const [version, setVersion] = useState(0);
+  const [decks, setDecks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const importRef = useRef(null);
-  const decks = useMemo(() => JSON.parse(localStorage.getItem('smartslide_saved_decks') || '[]'), [version]);
-  const demoDeck = { id:'demo', title:'N3文法：〜てくる', updatedAt:'デモデータ', status:'サンプル', slides: defaultSlides };
-  const baseRows = decks.length ? decks : [demoDeck];
+
+  // Fetch slides từ backend
+  const fetchDecks = () => {
+    setLoading(true);
+    apiGetMySlides()
+      .then(data => setDecks(data.slides || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchDecks();
+  }, []);
+
   const rows = useMemo(() => {
-    let list = baseRows.map(d => ({ ...d, status: d.status || (d.id === 'demo' ? 'サンプル' : '保存済み') }));
+    let list = decks.map(d => ({ ...d, status: d.status || '保存済み' }));
     const q = query.trim().toLowerCase();
-    if (q) list = list.filter(d => `${d.title} ${d.status} ${deckDate(d)}`.toLowerCase().includes(q));
+    if (q) list = list.filter(d => `${d.title} ${d.status} ${formatDeckDate(d)}`.toLowerCase().includes(q));
     if (statusFilter !== 'all') list = list.filter(d => d.status === statusFilter);
-    list.sort((a,b) => {
+    list.sort((a, b) => {
       if (sortBy === 'title') return String(a.title).localeCompare(String(b.title), 'ja');
       if (sortBy === 'slides') return (b.slides?.length || 0) - (a.slides?.length || 0);
-      return String(deckDate(b)).localeCompare(String(deckDate(a)), 'ja');
+      return String(a.updatedAt || '').localeCompare(String(b.updatedAt || ''));
     });
-    return list;
-  }, [baseRows, query, statusFilter, sortBy]);
-
-  function persist(next) {
-    localStorage.setItem('smartslide_saved_decks', JSON.stringify(next));
-    setVersion(v => v + 1);
-  }
-  function remove(id) {
-    persist(decks.filter(d => d.id !== id));
-  }
-  function copyDeck(deck) {
-    if (deck.id === 'demo') {
-      const copied = { ...deck, id: `deck_${Date.now()}`, title: `${deck.title} コピー`, status: '保存済み', updatedAt: new Date().toLocaleString('ja-JP') };
-      persist([copied, ...decks]);
-      return;
+    // For "newest" sorting, sort descending by date:
+    if (sortBy === 'newest') {
+      list.reverse();
     }
-    const copied = { ...deck, id: `deck_${Date.now()}`, title: `${deck.title} コピー`, status: '保存済み', updatedAt: new Date().toLocaleString('ja-JP') };
-    persist([copied, ...decks]);
+    return list;
+  }, [decks, query, statusFilter, sortBy]);
+
+  async function remove(id) {
+    if (!window.confirm(biText(profile, 'このスライドを削除しますか？', 'Bạn có muốn xóa bài trình chiếu này không?'))) return;
+    try {
+      await apiDeleteSlide(id);
+      setDecks(prev => prev.filter(d => d._id !== id));
+    } catch (err) {
+      alert(err.message);
+    }
   }
+
+  async function copyDeck(id) {
+    try {
+      await apiCloneSlide(id);
+      fetchDecks();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
   async function downloadDeck(deck) {
     try {
       const { jsPDF } = await import('jspdf');
       const html2canvas = (await import('html2canvas')).default;
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-      const slides = deck.slides?.length ? deck.slides : defaultSlides;
+      const slides = deck.slides?.length ? deck.slides : [];
+      if (slides.length === 0) {
+        alert(biText(profile, 'スライドが空です。', 'Bài trình chiếu trống.'));
+        return;
+      }
       for (let i = 0; i < slides.length; i += 1) {
         const node = createDownloadSlideNode(slides[i]);
         try {
@@ -196,27 +225,37 @@ export function MySlidesPage({ nav, profile, setProfile }) {
       pdf.save(`${sanitizeFileName(deck.title || 'slide')}.pdf`);
     } catch (error) {
       console.error(error);
-      alert(profile?.language === '日本語 + Tiếng Việt'
-        ? 'PDFの作成に失敗しました。画像URLが外部サイトの場合は、画像アップロードを使ってください。\nKhông thể tạo PDF. Nếu ảnh là link ngoài, hãy dùng ảnh upload từ máy.'
-        : 'PDFの作成に失敗しました。画像URLが外部サイトの場合は、画像アップロードを使ってください。');
+      alert(biText(
+        profile,
+        'PDFの作成に失敗しました。画像URLが外部サイトの場合は、画像アップロードを使ってください。',
+        'Tạo PDF thất bại. Nếu ảnh từ liên kết bên ngoài, vui lòng dùng ảnh tải lên.'
+      ));
     }
   }
+
   function exportAll() {
     exportJson('smartslide_my_slides.json', decks);
   }
-  function importSlides(e) {
+
+  async function importSlides(e) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const data = JSON.parse(String(reader.result || '[]'));
         const imported = Array.isArray(data) ? data : [data];
-        const normalized = imported.map((d, i) => ({ ...d, id: d.id || `import_${Date.now()}_${i}`, status: d.status || '保存済み', updatedAt: new Date().toLocaleString('ja-JP') }));
-        persist([...normalized, ...decks]);
-        alert(profile?.language === '日本語 + Tiếng Việt' ? 'スライドをインポートしました。\nĐã import slide.' : 'スライドをインポートしました。');
-      } catch {
-        alert(profile?.language === '日本語 + Tiếng Việt' ? 'ファイル形式が正しくありません。\nFile không đúng định dạng.' : 'ファイル形式が正しくありません。');
+        for (const item of imported) {
+          await apiCreateSlide({
+            title: item.title || 'Imported Slide',
+            slides: item.slides || [],
+            templateId: item.templateId || null
+          });
+        }
+        fetchDecks();
+        alert(biText(profile, 'スライドをインポートしました。', 'Đã nhập bài trình chiếu.'));
+      } catch (err) {
+        alert(biText(profile, 'ファイル形式が正しくありません。', 'Tệp không đúng định dạng.'));
       }
     };
     reader.readAsText(file);
@@ -225,17 +264,20 @@ export function MySlidesPage({ nav, profile, setProfile }) {
 
   return <AppLayout nav={nav} active="slides" profile={profile} setProfile={setProfile}>
     <section className="page-head split-head myslides-head">
-      <div><h1><Bi jp="マイスライド" vi="Slide của tôi" profile={profile}/></h1><p><Bi jp="作成・保存した教材スライドを管理できます。" vi="Quản lý các slide giáo án đã tạo và lưu." profile={profile}/></p></div>
+      <div>
+        <h1><Bi jp="マイスライド" vi="Bài trình chiếu" profile={profile}/></h1>
+        <p><Bi jp="作成・保存したプレゼンテーションを管理できます。" vi="Bạn có thể quản lý các bài thuyết trình đã tạo và lưu." profile={profile}/></p>
+      </div>
       <div className="myslides-head-actions">
         <input ref={importRef} type="file" accept=".json" hidden onChange={importSlides}/>
-        <button className="outline" onClick={() => importRef.current?.click()}><FileUp size={16}/><Bi jp="インポート" vi="Import" profile={profile}/></button>
-        <button className="outline" onClick={exportAll}><FileDown size={16}/><Bi jp="エクスポート" vi="Export" profile={profile}/></button>
-        <button className="pink" onClick={() => nav('editor', { deckId: null })}><Plus size={16}/><Bi jp="新規作成" vi="Tạo mới" profile={profile}/></button>
+        <button className="outline" onClick={() => importRef.current?.click()}><FileUp size={16}/><Bi jp="インポート" vi="Nhập dữ liệu" profile={profile}/></button>
+        <button className="outline" onClick={exportAll}><FileDown size={16}/><Bi jp="エクスポート" vi="Xuất dữ liệu" profile={profile}/></button>
+        <button className="pink" onClick={() => nav('editor', { deckId: null })}><Plus size={16}/><Bi jp="スライド作成" vi="Tạo bài trình chiếu" profile={profile}/></button>
       </div>
     </section>
 
     <section className="myslides-controls">
-      <div className="myslides-search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={biText(profile, 'スライドを検索', 'Tìm slide')} /></div>
+      <div className="myslides-search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={biText(profile, 'プレゼンテーションを検索', 'Tìm kiếm bài thuyết trình...')} /></div>
       <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
         <option value="all">{biText(profile, 'すべての状態', 'Tất cả trạng thái')}</option>
         <option value="保存済み">{biText(profile, '保存済み', 'Đã lưu')}</option>
@@ -250,25 +292,29 @@ export function MySlidesPage({ nav, profile, setProfile }) {
 
     <section className="slide-table-wrap">
       <div className="slide-table-head">
-        <span><Bi jp="スライド名" vi="Tên slide" profile={profile}/></span>
+        <span><Bi jp="プレゼン名" vi="Tên bài trình chiếu" profile={profile}/></span>
         <span><Bi jp="状態" vi="Trạng thái" profile={profile}/></span>
         <span><Bi jp="最終更新" vi="Cập nhật" profile={profile}/></span>
-        <span><Bi jp="ページ数" vi="Số trang" profile={profile}/></span>
         <span><Bi jp="操作" vi="Thao tác" profile={profile}/></span>
       </div>
-      {rows.map(deck => <article className="slide-row" key={deck.id}>
-        <div className="slide-row-title"><b>{deck.title}</b><small>{deck.slides?.[0]?.title || deck.title}</small></div>
-        <div><span className={deck.status === '保存済み' ? 'status-pill saved' : 'status-pill sample'}>{deck.status}</span></div>
-        <div className="muted">{deckDate(deck)}</div>
-        <div className="muted">{deck.slides?.length || 0}</div>
-        <div className="row-actions">
-          <button className="outline" onClick={() => nav('editor', { deckId: deck.id === 'demo' ? null : deck.id })}><Edit3 size={14}/><Bi jp="編集" vi="Sửa" profile={profile}/></button>
-          <button className="outline" onClick={() => downloadDeck(deck)}><Download size={14}/><Bi jp="DL" vi="Tải" profile={profile}/></button>
-          <button className="outline" onClick={() => copyDeck(deck)}><Copy size={14}/><Bi jp="コピー" vi="Sao chép" profile={profile}/></button>
-          {deck.id !== 'demo' && <button className="outline danger" onClick={() => remove(deck.id)}><Trash2 size={14}/><Bi jp="削除" vi="Xóa" profile={profile}/></button>}
-        </div>
-      </article>)}
-      {rows.length === 0 && <div className="empty"><Bi jp="条件に一致するスライドがありません。" vi="Không có slide phù hợp với điều kiện tìm kiếm." profile={profile}/></div>}
+      {loading ? <div className="empty">読み込み中...</div> : (
+        <>
+          {rows.map(deck => <article className="slide-row" key={deck._id}>
+            <button className="slide-row-title slide-row-link" onClick={() => nav('editor', { deckId: deck._id })}>
+              <b>{deck.title}</b><small>{deck.slides?.[0]?.title || deck.title}</small>
+            </button>
+            <div><span className="status-pill saved">{deck.status}</span></div>
+            <div className="muted">{formatDeckDate(deck)}</div>
+            <div className="row-actions icon-actions">
+              <button className="outline icon-only" title={biText(profile, '編集', 'Sửa')} aria-label={biText(profile, '編集', 'Sửa')} onClick={() => nav('editor', { deckId: deck._id })}><Edit3 size={14}/></button>
+              <button className="outline icon-only" title={biText(profile, 'ダウンロード', 'Tải')} aria-label={biText(profile, 'ダウンロード', 'Tải')} onClick={() => downloadDeck(deck)}><Download size={14}/></button>
+              <button className="outline icon-only" title={biText(profile, 'コピー', 'Sao chép')} aria-label={biText(profile, 'コピー', 'Sao chép')} onClick={() => copyDeck(deck._id)}><Copy size={14}/></button>
+              <button className="outline danger icon-only" title={biText(profile, '削除', 'Xóa')} aria-label={biText(profile, '削除', 'Xóa')} onClick={() => remove(deck._id)}><Trash2 size={14}/></button>
+            </div>
+          </article>)}
+          {rows.length === 0 && <div className="empty"><Bi jp="条件に一致するスライドがありません。" vi="Không có bài trình chiếu phù hợp với điều kiện tìm kiếm." profile={profile}/></div>}
+        </>
+      )}
     </section>
   </AppLayout>
 }
