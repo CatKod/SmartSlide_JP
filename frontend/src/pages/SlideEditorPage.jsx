@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AppLayout } from '../components/Layout.jsx';
 import { cloneSlides } from '../data/mockData.js';
-import { apiGetSlide, apiGetTemplateDetail, apiCreateSlide, apiUpdateSlide, apiUploadImage, apiCallAIChat } from '../api.js';
-import { ImagePlus, Save, Type, Upload, Plus, Trash2, Download, Play, X, Sparkles } from 'lucide-react';
-import { Bi, biText, isVietnamese } from '../i18n.jsx';
+import { apiGetSlide, apiGetTemplateDetail, apiCreateSlide, apiUpdateSlide, apiUploadImage } from '../api.js';
+import { ImagePlus, Save, Type, Upload, Plus, Trash2, Download, Play, X } from 'lucide-react';
+import { Bi, biText } from '../i18n.jsx';
 
 const TEXT_PLACEHOLDER = 'ここにテキストを入力してください';
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=900&auto=format&fit=crop';
@@ -213,48 +213,6 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
   const [presenting, setPresenting] = useState(false);
   const [colorPaletteOpen, setColorPaletteOpen] = useState(false);
   const [presentationIndex, setPresentationIndex] = useState(0);
-  const [activeRightTab, setActiveRightTab] = useState('properties');
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [aiResponse, setAiResponse] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
-
-  async function generateAIContent() {
-    if (!aiPrompt.trim()) return;
-    setAiLoading(true);
-    setAiResponse('');
-    try {
-      const res = await apiCallAIChat(aiPrompt);
-      setAiResponse(res.response || '');
-    } catch (err) {
-      setNotice(err.message || 'AIの呼び出しに失敗しました。');
-    } finally {
-      setAiLoading(false);
-    }
-  }
-
-  function addAITextToSlide() {
-    if (!aiResponse) return;
-    const id = `el_text_ai_${Date.now()}`;
-    const el = {
-      id,
-      type: 'text',
-      x: 12,
-      y: 20,
-      w: 76,
-      h: 60,
-      content: aiResponse,
-      bold: false,
-      italic: false,
-      underline: false,
-      fontSize: 16,
-      align: 'left',
-      color: '#201827',
-    };
-    updateSlide('elements', [...(current.elements || []), el]);
-    setSelectedId(id);
-    setNotice('AIの回答をテキストとしてスライドに追加しました。');
-  }
-
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
@@ -842,78 +800,17 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
         </div>
       </main>
       <aside className="property-panel">
-        <div className="property-tabs" style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #eee', marginBottom: '16px' }}>
-          <button 
-            type="button"
-            className={activeRightTab === 'properties' ? 'tab-btn active' : 'tab-btn'}
-            style={{ flex: 1, padding: '8px', border: '0', background: 'transparent', borderBottom: activeRightTab === 'properties' ? '2px solid #ec4899' : 'none', fontWeight: activeRightTab === 'properties' ? 'bold' : 'normal', color: activeRightTab === 'properties' ? '#ec4899' : '#666', cursor: 'pointer' }}
-            onClick={() => setActiveRightTab('properties')}
-          >
-            <Bi jp="プロパティ" vi="Thuộc tính" profile={profile}/>
-          </button>
-          <button 
-            type="button"
-            className={activeRightTab === 'ai' ? 'tab-btn active' : 'tab-btn'}
-            style={{ flex: 1, padding: '8px', border: '0', background: 'transparent', borderBottom: activeRightTab === 'ai' ? '2px solid #ec4899' : 'none', fontWeight: activeRightTab === 'ai' ? 'bold' : 'normal', color: activeRightTab === 'ai' ? '#ec4899' : '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
-            onClick={() => setActiveRightTab('ai')}
-          >
-            <Sparkles size={14} style={{ color: '#ec4899' }} />
-            AI Trợ lý
-          </button>
-        </div>
-
-        {activeRightTab === 'properties' ? (
-          <>
-            {selectedElement ? <>
-              <p className="selected-label"><Bi jp={`選択中：${selectedElement.isTitle ? 'タイトル' : selectedElement.type === 'text' ? 'テキスト' : '画像'}`} vi={`Đang chọn: ${selectedElement.isTitle ? 'Tiêu đề' : selectedElement.type === 'text' ? 'Văn bản' : 'Hình ảnh'}`} profile={profile}/></p>
-              <button className="outline full danger-action" onClick={deleteSelected} disabled={selectedElement.isTitle}><Trash2 size={15}/><Bi jp={selectedElement.isTitle ? 'タイトルは削除不可' : '選択中の要素を削除'} vi={selectedElement.isTitle ? 'Không thể xóa tiêu đề' : 'Xóa đối tượng đang chọn'} profile={profile}/></button>
-              {selectedElement.type === 'image' && <><label><Bi jp="画像リンク" vi="Link ảnh" profile={profile}/></label><input value={selectedElement.src || ''} onChange={e => updateElement(selectedElement.id, { src: e.target.value })} placeholder="https://..." /></>}
-              {selectedElement.type === 'text' && <><label><Bi jp="テキスト内容" vi="Nội dung văn bản" profile={profile}/></label><textarea value={selectedElement.content || ''} onChange={e => updateElement(selectedElement.id, { content: e.target.value })} /><label><Bi jp="文字サイズ" vi="Cỡ chữ" profile={profile}/></label><input type="number" min="10" max="96" value={selectedElement.fontSize || 18} onChange={e => updateElement(selectedElement.id, { fontSize: Number(e.target.value) })} /><label><Bi jp="文字色" vi="Màu chữ" profile={profile}/></label><input type="color" className="property-color" value={selectedElement.color || '#201827'} onChange={e => updateElement(selectedElement.id, { color: e.target.value })} /><label><Bi jp="文字揃え" vi="Căn lề chữ" profile={profile}/></label><select className="property-select" value={selectedElement.align || 'left'} onChange={e => updateElement(selectedElement.id, { align: e.target.value })}><option value="left">左揃え</option><option value="center">中央揃え</option><option value="right">右揃え</option></select></>}
-              <label><Bi jp="位置・サイズ" vi="Vị trí và kích thước" profile={profile}/></label><p className="hint"><Bi jp="ドラッグで移動、右下の丸いハンドルで拡大・縮小できます。" vi="Kéo để di chuyển, kéo nút tròn góc phải dưới để phóng to/thu nhỏ." profile={profile}/></p>
-            </> : <p className="hint"><Bi jp="テキスト hoặc hình ảnh để chỉnh sửa." vi="Bấm vào văn bản hoặc hình ảnh để chỉnh sửa." profile={profile}/></p>}
-            <label><Bi jp="メモ" vi="Ghi chú" profile={profile}/></label><textarea placeholder="発表者ノート" />
-            {selectedElement?.type === 'image' && <button className="pink full background-action" onClick={setSelectedImageAsBackground}><Bi jp="この画像を背景に設定" vi="Đặt hình ảnh này làm hình nền" profile={profile}/></button>}
-            {current.backgroundImage && <button className="outline full background-action" onClick={clearSlideBackground}><Bi jp="背景画像を解除" vi="Gỡ hình nền" profile={profile}/></button>}
-          </>
-        ) : (
-          <div className="ai-assistant-tab" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <label style={{ fontWeight: 'bold' }}>AI Trợ lý học tập</label>
-            <p className="hint" style={{ fontSize: '13px' }}>Nhập chủ đề hoặc yêu cầu của bài giảng để AI gợi ý nội dung slide (VD: "Từ vựng tiếng Nhật N5 trường học", "Ngữ pháp N3 てくる").</p>
-            <textarea 
-              value={aiPrompt} 
-              onChange={e => setAiPrompt(e.target.value)} 
-              placeholder={biText(profile, "AIへのプロンプトを入力してください...", "Nhập yêu cầu cho AI...")}
-              style={{ width: '100%', minHeight: '80px', padding: '8px', fontSize: '14px' }}
-            />
-            <button 
-              type="button"
-              className="pink full" 
-              onClick={generateAIContent} 
-              disabled={aiLoading || !aiPrompt.trim()}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px' }}
-            >
-              <Sparkles size={15} />
-              {aiLoading ? (isVietnamese(profile) ? 'Đang tạo...' : '生成中...') : (isVietnamese(profile) ? 'Tạo nội dung AI' : 'AI生成')}
-            </button>
-
-            {aiResponse && (
-              <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontWeight: 'bold' }}>Gợi ý từ AI:</label>
-                <div style={{ background: '#f8fafc', border: '1px solid #eadce5', borderRadius: '8px', padding: '10px', fontSize: '13px', maxHeight: '200px', overflowY: 'auto', whiteSpace: 'pre-wrap', color: '#333' }}>
-                  {aiResponse}
-                </div>
-                <button 
-                  type="button"
-                  className="outline full" 
-                  onClick={addAITextToSlide}
-                  style={{ fontSize: '13px', padding: '8px' }}
-                >
-                  <Bi jp="スライドに追加" vi="Thêm vào slide" profile={profile}/>
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+        <h3><Bi jp="プロパティ" vi="Thuộc tính" profile={profile}/></h3>
+        {selectedElement ? <>
+          <p className="selected-label"><Bi jp={`選択中：${selectedElement.isTitle ? 'タイトル' : selectedElement.type === 'text' ? 'テキスト' : '画像'}`} vi={`Đang chọn: ${selectedElement.isTitle ? 'Tiêu đề' : selectedElement.type === 'text' ? 'Văn bản' : 'Hình ảnh'}`} profile={profile}/></p>
+          <button className="outline full danger-action" onClick={deleteSelected} disabled={selectedElement.isTitle}><Trash2 size={15}/><Bi jp={selectedElement.isTitle ? 'タイトルは削除不可' : '選択中の要素を削除'} vi={selectedElement.isTitle ? 'Không thể xóa tiêu đề' : 'Xóa đối tượng đang chọn'} profile={profile}/></button>
+          {selectedElement.type === 'image' && <><label><Bi jp="画像リンク" vi="Link ảnh" profile={profile}/></label><input value={selectedElement.src || ''} onChange={e => updateElement(selectedElement.id, { src: e.target.value })} placeholder="https://..." /></>}
+          {selectedElement.type === 'text' && <><label><Bi jp="テキスト内容" vi="Nội dung văn bản" profile={profile}/></label><textarea value={selectedElement.content || ''} onChange={e => updateElement(selectedElement.id, { content: e.target.value })} /><label><Bi jp="文字サイズ" vi="Cỡ chữ" profile={profile}/></label><input type="number" min="10" max="96" value={selectedElement.fontSize || 18} onChange={e => updateElement(selectedElement.id, { fontSize: Number(e.target.value) })} /><label><Bi jp="文字色" vi="Màu chữ" profile={profile}/></label><input type="color" className="property-color" value={selectedElement.color || '#201827'} onChange={e => updateElement(selectedElement.id, { color: e.target.value })} /><label><Bi jp="文字揃え" vi="Căn lề chữ" profile={profile}/></label><select className="property-select" value={selectedElement.align || 'left'} onChange={e => updateElement(selectedElement.id, { align: e.target.value })}><option value="left">左揃え</option><option value="center">中央揃え</option><option value="right">右揃え</option></select></>}
+          <label><Bi jp="位置・サイズ" vi="Vị trí và kích thước" profile={profile}/></label><p className="hint"><Bi jp="ドラッグで移動、右下の丸いハンドルで拡大・縮小できます。" vi="Kéo để di chuyển, kéo nút tròn góc phải dưới để phóng to/thu nhỏ." profile={profile}/></p>
+        </> : <p className="hint"><Bi jp="テキストまたは画像をクリックして編集します。" vi="Bấm vào văn bản hoặc hình ảnh để chỉnh sửa." profile={profile}/></p>}
+        <label><Bi jp="メモ" vi="Ghi chú" profile={profile}/></label><textarea placeholder="発表者ノート" />
+        {selectedElement?.type === 'image' && <button className="pink full background-action" onClick={setSelectedImageAsBackground}><Bi jp="この画像を背景に設定" vi="Đặt hình ảnh này làm hình nền" profile={profile}/></button>}
+        {current.backgroundImage && <button className="outline full background-action" onClick={clearSlideBackground}><Bi jp="背景画像を解除" vi="Gỡ hình nền" profile={profile}/></button>}
       </aside>
 
       {presenting && <PresentationOverlay

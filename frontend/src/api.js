@@ -161,12 +161,3 @@ export async function apiGetMaterials({ keyword, type, level } = {}) {
 export async function apiDeleteMaterial(id) {
   return apiFetch(`/materials/${id}`, { method: 'DELETE' });
 }
-
-// ===== AI Assistant =====
-export async function apiCallAIChat(prompt) {
-  return apiFetch('/ai/chat', {
-    method: 'POST',
-    body: JSON.stringify({ prompt }),
-  });
-}
-
