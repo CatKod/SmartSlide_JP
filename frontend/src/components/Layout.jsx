@@ -47,7 +47,7 @@ function saveUploadedTemplates(templates) {
 }
 
 
-export function AppLayout({ children, nav, active = 'templates', profile, setProfile, compactSidebar = false }) {
+export function AppLayout({ children, nav, active = 'templates', profile, setProfile, compactSidebar = false, editorTopbar = false }) {
   const [keyword, setKeyword] = useState('');
   const uploadRef = useRef(null);
   const items = [
@@ -80,13 +80,13 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
       <nav>{items.map(([key,label,vi,Icon]) => <button key={key} className={active===key?'nav active':'nav'} onClick={() => nav(key)}><Icon size={17}/><span className="nav-label"><Bi jp={label} vi={vi} profile={profile}/></span></button>)}</nav>
     </aside>
     <main className="main">
-      <header className="topbar">
-        <form className="top-search-form" onSubmit={submitSearch}>
+      <header className={editorTopbar ? 'topbar topbar-editor' : 'topbar'}>
+        {!editorTopbar && <form className="top-search-form" onSubmit={submitSearch}>
           <Search size={17} className="search-icon" />
           <input className="global-search" value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder={biText(profile, 'キーワード、文法、トピックで検索...', 'Tìm kiếm từ khóa, ngữ pháp, chủ đề...')} />
-        </form>
-        <input ref={uploadRef} type="file" accept=".json,.ppt,.pptx,.pdf" hidden onChange={handleTemplateUpload} />
-        <button className="pink top-upload" onClick={() => uploadRef.current?.click()}><Upload size={16}/><Bi jp="テンプレートをアップロード" vi="Tải mẫu lên" profile={profile}/></button>
+        </form>}
+        {!editorTopbar && <input ref={uploadRef} type="file" accept=".json,.ppt,.pptx,.pdf" hidden onChange={handleTemplateUpload} />}
+        {!editorTopbar && <button className="pink top-upload" onClick={() => uploadRef.current?.click()}><Upload size={16}/><Bi jp="テンプレートをアップロード" vi="Tải mẫu lên" profile={profile}/></button>}
         <LanguageToggleButton profile={profile} setProfile={setProfile} />
         <button className="avatar" onClick={() => nav('settings')} aria-label="プロフィール">
           {profile?.avatarUrl ? <img src={profile.avatarUrl} alt="" /> : <UserRound size={18}/>}

@@ -5,7 +5,31 @@ import { Download, Search, Upload, X, Trash2 } from 'lucide-react';
 import { Bi, biText, isVietnamese } from '../i18n.jsx';
 
 function isPreviewable(material) {
-  return material.mime?.includes('pdf') || material.mime?.startsWith('image/') || material.mime?.startsWith('text/') || material.previewText;
+  return isPdf(material) || isImage(material) || isText(material) || material.previewText;
+}
+
+function materialMime(material) {
+  return material?.mimeType || material?.mime || '';
+}
+
+function materialFileName(material) {
+  return `${material?.fileName || material?.fileUrl || material?.title || ''}`;
+}
+
+function isPdf(material) {
+  return materialMime(material).includes('pdf') || /\.pdf$/i.test(materialFileName(material));
+}
+
+function isImage(material) {
+  return materialMime(material).startsWith('image/');
+}
+
+function isText(material) {
+  return materialMime(material).startsWith('text/') || /\.(txt|md|csv)$/i.test(materialFileName(material));
+}
+
+function materialPreviewEndpoint(material) {
+  return `http://localhost:5000/api/materials/${material._id}/preview`;
 }
 
 export function SharedMaterialsPage({ nav, profile, setProfile }) {
@@ -14,6 +38,9 @@ export function SharedMaterialsPage({ nav, profile, setProfile }) {
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [preview, setPreview] = useState(null);
+  const [previewObjectUrl, setPreviewObjectUrl] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState('');
   const fileInputRef = useRef(null);
   const bi = isVietnamese(profile);
 
@@ -26,6 +53,72 @@ export function SharedMaterialsPage({ nav, profile, setProfile }) {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    if (!preview) {
+      setPreviewObjectUrl('');
+      setPreviewError('');
+      setPreviewLoading(false);
+      return undefined;
+    }
+
+    if (isImage(preview)) {
+      setPreviewObjectUrl(`http://localhost:5000${preview.fileUrl}`);
+      setPreviewError('');
+      setPreviewLoading(false);
+      return undefined;
+    }
+
+    if (!isPreviewable(preview)) {
+      setPreviewObjectUrl('');
+      setPreviewError('');
+      setPreviewLoading(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    let objectUrl = '';
+    setPreviewObjectUrl('');
+    setPreviewError('');
+    setPreviewLoading(true);
+
+    fetch(materialPreviewEndpoint(preview), { headers: { Authorization: `Bearer ${getToken()}` } })
+      .then(async response => {
+        if (!response.ok) {
+          const error = new Error('preview failed');
+          error.status = response.status;
+          throw error;
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        objectUrl = URL.createObjectURL(blob);
+        if (!cancelled) setPreviewObjectUrl(objectUrl);
+      })
+      .catch(error => {
+        console.error(error);
+        if (!cancelled) {
+          const isMissingFile = error.status === 404;
+          setPreviewError(biText(
+            profile,
+            isMissingFile
+              ? 'ファイルがサーバー上に見つかりません。もう一度アップロードしてください。'
+              : 'プレビューを読み込めませんでした。ダウンロードして確認してください。',
+            isMissingFile
+              ? 'Không tìm thấy file trên server. Vui lòng tải lên lại file PDF.'
+              : 'Không tải được bản xem trước. Vui lòng tải xuống để kiểm tra.'
+          ));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setPreviewLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [preview, profile]);
 
   const rows = useMemo(() => materials.filter(m => `${m.title} ${m.type} ${m.level} ${m.ownerName}`.toLowerCase().includes(keyword.toLowerCase())), [materials, keyword]);
 
@@ -123,10 +216,12 @@ export function SharedMaterialsPage({ nav, profile, setProfile }) {
           <button className="icon-button" onClick={() => setPreview(null)}><X size={20}/></button>
         </div>
         <div className="preview-body">
-          {preview.mimeType?.includes('pdf') && <iframe title={preview.title} src={`http://localhost:5000/api/materials/${preview._id}/preview`}></iframe>}
-          {preview.mimeType?.startsWith('image/') && <img src={`http://localhost:5000${preview.fileUrl}`} alt={preview.title} />}
-          {preview.mimeType?.startsWith('text/') && <iframe title={preview.title} src={`http://localhost:5000/api/materials/${preview._id}/preview`}></iframe>}
-          {!preview.mimeType?.includes('pdf') && !preview.mimeType?.startsWith('image/') && !preview.mimeType?.startsWith('text/') && <div className="empty compact"><Bi jp="このファイル形式はブラウザでプレビューできません。ダウンロードして確認してください。" vi="Định dạng này không xem trước được trên trình duyệt. Vui lòng tải xuống để kiểm tra." profile={profile}/></div>}
+          {previewLoading && <div className="empty compact"><Bi jp="プレビューを読み込み中..." vi="Đang tải bản xem trước..." profile={profile}/></div>}
+          {previewError && <div className="empty compact">{previewError}</div>}
+          {!previewLoading && !previewError && isPdf(preview) && previewObjectUrl && <iframe title={preview.title} src={`${previewObjectUrl}#toolbar=1&navpanes=0`}></iframe>}
+          {!previewLoading && !previewError && isImage(preview) && previewObjectUrl && <img src={previewObjectUrl} alt={preview.title} />}
+          {!previewLoading && !previewError && isText(preview) && previewObjectUrl && <iframe title={preview.title} src={previewObjectUrl}></iframe>}
+          {!previewLoading && !previewError && !isPreviewable(preview) && <div className="empty compact"><Bi jp="このファイル形式はブラウザでプレビューできません。ダウンロードして確認してください。" vi="Định dạng này không xem trước được trên trình duyệt. Vui lòng tải xuống để kiểm tra." profile={profile}/></div>}
         </div>
         <div className="preview-foot">
           <button className="outline" onClick={()=>downloadMaterial(preview)}><Download size={14}/><Bi jp="ダウンロード" vi="Tải xuống" profile={profile}/></button>
