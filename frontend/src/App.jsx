@@ -10,6 +10,10 @@ import { SettingsPage } from './pages/SettingsPage.jsx';
 import { TemplateListPage } from './pages/TemplateListPage.jsx';
 import { TemplateDetailPage } from './pages/TemplateDetailPage.jsx';
 import { SlideEditorPage } from './pages/SlideEditorPage.jsx';
+import { AdminDashboardPage } from './pages/AdminDashboardPage.jsx';
+import { AdminUsersPage } from './pages/AdminUsersPage.jsx';
+import { AdminTemplatesPage } from './pages/AdminTemplatesPage.jsx';
+import { AdminSettingsPage } from './pages/AdminSettingsPage.jsx';
 import { getUser, clearToken } from './api.js';
 import './styles.css';
 
@@ -53,6 +57,10 @@ function App() {
     if (route === 'login') return <LoginPage nav={nav} profile={profile} setProfile={setProfile} />;
     if (route === 'register') return <RegisterPage nav={nav} profile={profile} setProfile={setProfile} />;
     if (route === 'forgot') return <ForgotPasswordPage nav={nav} profile={profile} setProfile={setProfile} />;
+    if (route === 'admin_dashboard') return <AdminDashboardPage {...layoutProps} />;
+    if (route === 'admin_users') return <AdminUsersPage {...layoutProps} />;
+    if (route === 'admin_templates') return <AdminTemplatesPage {...layoutProps} />;
+    if (route === 'admin_settings') return <AdminSettingsPage {...layoutProps} />;
     if (route === 'dashboard') return <DashboardPage {...layoutProps} />;
     if (route === 'slides') return <MySlidesPage {...layoutProps} />;
     if (route === 'shared') return <SharedMaterialsPage {...layoutProps} />;

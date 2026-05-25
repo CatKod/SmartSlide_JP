@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { FileText, GalleryHorizontal, House, Search, Settings, Share2, Upload, UserRound } from 'lucide-react';
+import { FileText, GalleryHorizontal, House, Search, Settings, Share2, ShieldCheck, Upload, UserRound } from 'lucide-react';
 import { Bi, biText } from '../i18n.jsx';
 import { LanguageToggleButton } from './LanguageToggleButton.jsx';
 
@@ -47,7 +47,7 @@ function saveUploadedTemplates(templates) {
 }
 
 
-export function AppLayout({ children, nav, active = 'templates', profile, setProfile, compactSidebar = false, editorTopbar = false }) {
+export function AppLayout({ children, nav, active = 'templates', profile, setProfile, compactSidebar = false, editorTopbar = false, topbarLeft = null }) {
   const [keyword, setKeyword] = useState('');
   const uploadRef = useRef(null);
   const items = [
@@ -55,6 +55,7 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
     ['slides', 'マイスライド', 'Bài trình chiếu', FileText],
     ['templates', 'ギャラリー', 'Thư viện', GalleryHorizontal],
     ['shared', '共有資料', 'Tài liệu chung', Share2],
+    ...(profile?.role === 'admin' ? [['admin_dashboard', '管理', 'Quản trị', ShieldCheck]] : []),
     ['settings', '設定', 'Cài đặt', Settings],
   ];
 
@@ -87,6 +88,7 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
         </form>}
         {!editorTopbar && <input ref={uploadRef} type="file" accept=".json,.ppt,.pptx,.pdf" hidden onChange={handleTemplateUpload} />}
         {!editorTopbar && <button className="pink top-upload" onClick={() => uploadRef.current?.click()}><Upload size={16}/><Bi jp="テンプレートをアップロード" vi="Tải mẫu lên" profile={profile}/></button>}
+        {topbarLeft}
         <LanguageToggleButton profile={profile} setProfile={setProfile} />
         <button className="avatar" onClick={() => nav('settings')} aria-label="プロフィール">
           {profile?.avatarUrl ? <img src={profile.avatarUrl} alt="" /> : <UserRound size={18}/>}

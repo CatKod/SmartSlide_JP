@@ -57,10 +57,10 @@ export async function apiLogin(email, password) {
   return data;
 }
 
-export async function apiRegister({ username, name, email, password }) {
+export async function apiRegister({ username, name, email, password, role }) {
   const data = await apiFetch('/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ username, name, email, password }),
+    body: JSON.stringify({ username, name, email, password, ...(role ? { role } : {}) }),
   });
   return data;
 }
@@ -160,4 +160,93 @@ export async function apiGetMaterials({ keyword, type, level } = {}) {
 
 export async function apiDeleteMaterial(id) {
   return apiFetch(`/materials/${id}`, { method: 'DELETE' });
+}
+
+
+// ===== Admin FE helpers =====
+// Các helper dưới đây chỉ dùng những endpoint backend đã tồn tại.
+// Backend hiện chưa có endpoint admin chuyên biệt như GET /users hoặc PUT /templates,
+// nên UI admin sẽ lấy dữ liệu thật từ templates/materials/slides/me và lưu thao tác quản trị chưa có API bằng localStorage.
+
+export async function apiAdminBootstrapLogin(email, password) {
+  // Cho phép FE tạo tài khoản admin demo bằng endpoint /auth/register hiện có nếu BE chưa seed admin.
+  // Không sửa backend; chỉ tận dụng role=admin đã được route register hỗ trợ.
+  try {
+    return await apiLogin(email, password);
+  } catch (loginErr) {
+    if (email === 'admin@example.com') {
+      try {
+        await apiRegister({ username: 'admin', name: 'Admin', email, password, role: 'admin' });
+        return await apiLogin(email, password);
+      } catch (registerErr) {
+        throw loginErr;
+      }
+    }
+    throw loginErr;
+  }
+}
+
+export async function apiAdminGetDashboardData() {
+  const [templatesRes, materialsRes, slidesRes, meRes] = await Promise.allSettled([
+    apiGetTemplates(),
+    apiGetMaterials(),
+    apiGetMySlides(),
+    apiGetMe(),
+  ]);
+
+  const templates = templatesRes.status === 'fulfilled' ? (templatesRes.value.templates || []) : [];
+  const materials = materialsRes.status === 'fulfilled' ? (materialsRes.value.materials || []) : [];
+  const slides = slidesRes.status === 'fulfilled' ? (slidesRes.value.slides || []) : [];
+  const me = meRes.status === 'fulfilled' ? meRes.value.user : getUser();
+
+  return { templates, materials, slides, me };
+}
+
+export async function apiAdminCreateUser({ name, email, role = 'teacher', password = 'password123' }) {
+  const usernameBase = String(email || '').split('@')[0] || `user_${Date.now()}`;
+  const username = `${usernameBase}_${Date.now().toString().slice(-5)}`;
+  return apiRegister({ username, name, email, password, role });
+}
+
+export function getLocalAdminUsers(currentUser) {
+  const saved = sessionStorage.getItem('smartslide_admin_users_cache');
+  const cached = saved ? JSON.parse(saved) : [];
+  const current = currentUser ? [{
+    id: currentUser._id || currentUser.id || 'me',
+    name: currentUser.name || currentUser.username || 'Admin',
+    email: currentUser.email || 'admin@example.com',
+    role: currentUser.role || 'admin',
+    status: 'active',
+    uploads: 0,
+    joined: currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN'),
+    fromBackend: true,
+  }] : [];
+  const merged = [...current, ...cached];
+  return merged.filter((u, index, arr) => arr.findIndex(x => x.email === u.email) === index);
+}
+
+export function setLocalAdminUsers(users) {
+  const localOnly = users.filter(u => !u.fromBackend);
+  sessionStorage.setItem('smartslide_admin_users_cache', JSON.stringify(localOnly));
+}
+
+export function getLocalTemplateOverrides() {
+  return JSON.parse(sessionStorage.getItem('smartslide_admin_template_overrides') || '{}');
+}
+
+export function setLocalTemplateOverride(id, patch) {
+  const overrides = getLocalTemplateOverrides();
+  overrides[id] = { ...(overrides[id] || {}), ...patch };
+  sessionStorage.setItem('smartslide_admin_template_overrides', JSON.stringify(overrides));
+  return overrides;
+}
+
+export function deleteLocalTemplate(id) {
+  const deleted = JSON.parse(sessionStorage.getItem('smartslide_admin_deleted_templates') || '[]');
+  if (!deleted.includes(id)) deleted.push(id);
+  sessionStorage.setItem('smartslide_admin_deleted_templates', JSON.stringify(deleted));
+}
+
+export function getDeletedLocalTemplates() {
+  return JSON.parse(sessionStorage.getItem('smartslide_admin_deleted_templates') || '[]');
 }

@@ -123,6 +123,20 @@ async function seed() {
     await user.save();
     console.log(`Created demo user: ${user.email} (username: ${user.username}) / password`);
 
+    // Create admin user
+    const admin = new User({
+      username: 'admin',
+      name: 'Administrator',
+      email: 'admin@example.com',
+      password_hash: 'Admin12345!',
+      role: 'admin',
+      level: 'N/A',
+      language: '日本語',
+      preferences: { theme: 'light', language: 'ja' },
+    });
+    await admin.save();
+    console.log(`Created admin user: ${admin.email} (username: ${admin.username}) / Admin12345!`);
+
     // Tạo templates
     await Template.insertMany(templates);
     console.log(`Inserted ${templates.length} templates`);
