@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { AppLayout } from '../components/Layout.jsx';
-import { apiUpdateMe, saveUser, apiLogout } from '../api.js';
+import { apiUpdateMe, saveUser } from '../api.js';
 import { Camera, KeyRound, Save } from 'lucide-react';
 import { Bi, biText, resolveLanguage } from '../i18n.jsx';
 
@@ -166,9 +166,6 @@ export function SettingsPage({ nav, profile, setProfile }) {
           <button className="pink" type="button" onClick={saveProfile} disabled={loading}>
             <Save size={15}/>
             {loading ? <Bi jp="保存中..." vi="Đang lưu..." profile={profile}/> : <Bi jp="変更を保存" vi="Lưu thay đổi" profile={profile}/>}
-          </button>
-          <button className="outline" type="button" onClick={async () => { try { await apiLogout(); } catch {} setProfile(null); nav('login'); }} style={{ marginLeft: 8 }}>
-            <Bi jp="ログアウト" vi="Đăng xuất" profile={profile}/>
           </button>
         </div>
       </section>

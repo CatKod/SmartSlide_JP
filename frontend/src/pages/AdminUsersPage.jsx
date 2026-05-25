@@ -4,8 +4,14 @@ import { apiAdminCreateUser, apiAdminGetDashboardData, getLocalAdminUsers, setLo
 import { INITIAL_ADMIN_USERS, statusLabel } from '../data/adminMockData.js';
 import { Filter, MoreVertical, Plus, Search } from 'lucide-react';
 import { Bi, biText } from '../i18n.jsx';
+import { AdminSelect } from '../components/AdminSelect.jsx';
 
-const statusOptions = ['all', 'active', 'inactive', 'suspended'];
+const statusOptions = [
+  { value: 'all', label: 'すべて' },
+  { value: 'active', label: 'アクティブ' },
+  { value: 'inactive', label: '非アクティブ' },
+  { value: 'suspended', label: '一時停止' },
+];
 
 export function AdminUsersPage({ nav, profile }) {
   const [users, setUsers] = useState([]);
@@ -99,7 +105,14 @@ export function AdminUsersPage({ nav, profile }) {
 
       <div className="admin-toolbar">
         <div className="admin-search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={biText(profile, 'ユーザーを検索...', 'Tìm kiếm người dùng...')} /></div>
-        <div className="admin-filter"><Filter size={16}/><select value={status} onChange={e=>setStatus(e.target.value)}>{statusOptions.map(s => <option key={s} value={s}>{s === 'all' ? 'すべて' : statusLabel(s)}</option>)}</select></div>
+        <div className="admin-filter admin-filter-inline"><Filter size={16}/>
+          <AdminSelect
+            value={status}
+            options={statusOptions}
+            onChange={setStatus}
+            className="compact"
+          />
+        </div>
       </div>
 
       <div className="admin-mini-stats">

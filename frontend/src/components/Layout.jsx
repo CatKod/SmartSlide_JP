@@ -47,7 +47,7 @@ function saveUploadedTemplates(templates) {
 }
 
 
-export function AppLayout({ children, nav, active = 'templates', profile, setProfile, compactSidebar = false, editorTopbar = false, topbarLeft = null }) {
+export function AppLayout({ children, nav, active = 'templates', profile, setProfile, compactSidebar = false, editorTopbar = false }) {
   const [keyword, setKeyword] = useState('');
   const uploadRef = useRef(null);
   const items = [
@@ -88,7 +88,6 @@ export function AppLayout({ children, nav, active = 'templates', profile, setPro
         </form>}
         {!editorTopbar && <input ref={uploadRef} type="file" accept=".json,.ppt,.pptx,.pdf" hidden onChange={handleTemplateUpload} />}
         {!editorTopbar && <button className="pink top-upload" onClick={() => uploadRef.current?.click()}><Upload size={16}/><Bi jp="テンプレートをアップロード" vi="Tải mẫu lên" profile={profile}/></button>}
-        {topbarLeft}
         <LanguageToggleButton profile={profile} setProfile={setProfile} />
         <button className="avatar" onClick={() => nav('settings')} aria-label="プロフィール">
           {profile?.avatarUrl ? <img src={profile.avatarUrl} alt="" /> : <UserRound size={18}/>}

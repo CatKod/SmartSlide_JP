@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AdminLayout } from '../components/AdminLayout.jsx';
 import { ADMIN_SETTINGS } from '../data/adminMockData.js';
-import { apiGetMe, apiUpdateMe, apiLogout } from '../api.js';
+import { apiGetMe, apiUpdateMe } from '../api.js';
 import { Database, RefreshCw, Save, Trash2 } from 'lucide-react';
 import { Bi } from '../i18n.jsx';
 
@@ -74,7 +74,6 @@ export function AdminSettingsPage({ nav, profile, setProfile }) {
           <button onClick={clearCache}><Trash2 size={16}/><Bi jp="キャッシュクリア" vi="Xóa cache" profile={profile}/></button>
           <button onClick={backup}><Database size={16}/><Bi jp="データベースダウンロード" vi="Tải backup dữ liệu" profile={profile}/></button>
           <button onClick={() => setNotice('同期が完了しました。 / Đã đồng bộ hệ thống.')}><RefreshCw size={16}/><Bi jp="同期リセット" vi="Đồng bộ lại" profile={profile}/></button>
-          <button onClick={async () => { try { await apiLogout(); } catch {} setProfile?.(null); nav('login'); }}><Bi jp="ログアウト" vi="Đăng xuất" profile={profile}/></button>
         </section>
 
         <section className="admin-card settings-card">

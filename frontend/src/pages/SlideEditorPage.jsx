@@ -169,7 +169,6 @@ function SlideView({ slide, className = '' }) {
           fontSize: `${el.fontSize || 18}px`,
           textAlign: el.align || 'left',
           color: el.color || '#201827',
-          lineHeight: el.lineHeight || 1.55,
         }}
       >{el.content}</div> : <img src={el.src || DEFAULT_IMAGE} alt="スライド" />}
     </div>)}
@@ -198,7 +197,6 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
   const [active, setActive] = useState(0);
   const [selectedId, setSelectedId] = useState(null);
   const [notice, setNotice] = useState('');
-  const [noticeType, setNoticeType] = useState('info');
   const [exportFormat, setExportFormat] = useState('pdf');
   const [saving, setSaving] = useState(false);
   const [presenting, setPresenting] = useState(false);
@@ -207,49 +205,12 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
   const [history, setHistory] = useState({ past: [], future: [] });
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
-  const stageRef = useRef(null);
   const dragRef = useRef(null);
   const resizeRef = useRef(null);
   const slideDragRef = useRef(null);
   const historyRef = useRef({ slides, active, selectedId, slideName });
   const continuousEditRef = useRef(null);
-  const noticeTimerRef = useRef(null);
-  const notify = (jp, vi, type = 'info') => {
-    const text = biText(profile, jp, vi);
-    setNotice(text);
-    setNoticeType(type);
-    if (noticeTimerRef.current) {
-      clearTimeout(noticeTimerRef.current);
-      noticeTimerRef.current = null;
-    }
-    // auto-hide for both info and success
-    if (type === 'info' || type === 'success') {
-      noticeTimerRef.current = setTimeout(() => {
-        setNotice('');
-        setNoticeType('');
-        noticeTimerRef.current = null;
-        // reset canvas / stage scroll to top-left
-        try {
-          if (stageRef.current && typeof stageRef.current.scrollTo === 'function') {
-            stageRef.current.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-          } else if (canvasRef.current && canvasRef.current.scrollIntoView) {
-            canvasRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        } catch (e) {
-          // ignore
-        }
-      }, 1500);
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      if (noticeTimerRef.current) {
-        clearTimeout(noticeTimerRef.current);
-        noticeTimerRef.current = null;
-      }
-    };
-  }, []);
+  const notify = (jp, vi) => setNotice(biText(profile, jp, vi));
 
   useEffect(() => {
     historyRef.current = { slides, active, selectedId, slideName };
@@ -282,7 +243,7 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
           }
         }
       } catch (err) {
-        if (!cancelled) notify('データの読み込みに失敗しました。', 'Tải dữ liệu thất bại.', 'info');
+        if (!cancelled) setNotice(biText(profile, 'データの読み込みに失敗しました。', 'Tải dữ liệu thất bại.'));
       }
       if (!cancelled) {
         setActive(0);
@@ -393,19 +354,6 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
   const selectedElement = current?.elements?.find(el => el.id === selectedId) || null;
   const canUndo = history.past.length > 0;
   const canRedo = history.future.length > 0;
-
-  const topbarLeft = (
-    <div className="topbar-deck-name-wrap">
-      <span className="topbar-deck-name-label"><Bi jp="スライド名: " vi="Tên bài trình chiếu: " profile={profile}/></span>
-      <input
-        className="topbar-deck-name-input"
-        value={slideName}
-        onChange={e => { beginContinuousHistory('deck-name'); setSlideName(e.target.value); }}
-        onBlur={() => endContinuousHistory('deck-name')}
-        placeholder={biText(profile, '新しいスライド', 'Bài trình chiếu mới')}
-      />
-    </div>
-  );
 
   function getCurrentHistorySnapshot() {
     return createHistorySnapshot(historyRef.current);
@@ -604,20 +552,6 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
     updateElement(selectedElement.id, { [key]: !selectedElement[key] });
   }
 
-  function cycleLineHeight() {
-    if (!selectedElement || selectedElement.type !== 'text') {
-      notify('先にテキストボックスを選択してください。', 'Vui lòng chọn hộp văn bản trước.');
-      return;
-    }
-    const options = [1, 1.15, 1.35, 1.55, 1.75, 2];
-    const current = Number(selectedElement.lineHeight || 1.55);
-    let idx = options.findIndex(o => Math.abs(o - current) < 0.03);
-    if (idx === -1) idx = options.indexOf(1.55);
-    const next = options[(idx + 1) % options.length];
-    setTextFormat({ lineHeight: next });
-    notify('行間を変更しました。', 'Đã thay đổi khoảng cách dòng。', 'success');
-  }
-
   function setTextFormat(patch) {
     if (!selectedElement || selectedElement.type !== 'text') {
       notify('先にテキストボックスを選択してください。', 'Vui lòng chọn hộp văn bản trước.');
@@ -721,19 +655,19 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
 
   async function save() {
     setSaving(true);
-    notify('保存中...', 'Đang lưu...', 'success');
+    notify('保存中...', 'Đang lưu...');
     try {
       const title = slideName || slides[0]?.title || '無題のスライド';
       if (currentDeckId) {
         await apiUpdateSlide(currentDeckId, { title, slides, templateId: templateId || null });
-        notify('既存のスライドを更新しました。', 'Đã cập nhật bài trình chiếu hiện có.', 'success');
+        notify('既存のスライドを更新しました。', 'Đã cập nhật bài trình chiếu hiện có.');
       } else {
         const res = await apiCreateSlide({ title, slides, templateId: templateId || null });
         setCurrentDeckId(res.slide._id);
-        notify('新しいスライドとして保存しました。', 'Đã lưu thành bài trình chiếu mới.', 'success');
+        notify('新しいスライドとして保存しました。', 'Đã lưu thành bài trình chiếu mới.');
       }
     } catch (err) {
-      notify('保存に失敗しました: ' + err.message, 'Lưu thất bại: ' + err.message, 'info');
+      setNotice(biText(profile, '保存に失敗しました: ', 'Lưu thất bại: ') + err.message);
     } finally {
       setSaving(false);
     }
@@ -858,7 +792,7 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
 
   if (!current) return null;
 
-  return <AppLayout nav={nav} active="slides" profile={profile} setProfile={setProfile} compactSidebar editorTopbar topbarLeft={topbarLeft}>
+  return <AppLayout nav={nav} active="slides" profile={profile} setProfile={setProfile} compactSidebar editorTopbar>
     <div className="editor-page">
       <section className="editor-workspace">
         <aside className="slide-list editor-panel">
@@ -872,7 +806,18 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
               <button className="outline full add-slide-btn" onClick={addSlide}><Plus size={15}/><Bi jp="追加" vi="Thêm" profile={profile}/></button>
             </div>
           </div>
-          
+          <label className="editor-name-label"><Bi jp="スライド名" vi="Tên bài trình chiếu" profile={profile}/></label>
+          <input
+            className="editor-name-input"
+            value={slideName}
+            onChange={e => {
+              beginContinuousHistory('deck-name');
+              setSlideName(e.target.value);
+            }}
+            onBlur={() => endContinuousHistory('deck-name')}
+            placeholder="例：N3文法レッスン - 助詞"
+          />
+          <p className="slide-order-hint"><Bi jp="スライドをドラッグして順番を変更できます。不要なページはゴミ箱で削除できます。" vi="Kéo trang để đổi thứ tự. Có thể xóa trang không cần bằng biểu tượng thùng rác." profile={profile}/></p>
           <div className="slide-list-items">
             {slides.map((s, i) => <div
               key={s.id}
@@ -946,17 +891,6 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
                 <button className={selectedElement?.align === 'left' ? 'active-tool align-tool' : 'align-tool'} onClick={() => setTextFormat({ align: 'left' })} disabled={selectedElement?.type !== 'text'}>左</button>
                 <button className={selectedElement?.align === 'center' ? 'active-tool align-tool' : 'align-tool'} onClick={() => setTextFormat({ align: 'center' })} disabled={selectedElement?.type !== 'text'}>中</button>
                 <button className={selectedElement?.align === 'right' ? 'active-tool align-tool' : 'align-tool'} onClick={() => setTextFormat({ align: 'right' })} disabled={selectedElement?.type !== 'text'}>右</button>
-                <input
-                  type="number"
-                  className="line-height-input"
-                  step="0.05"
-                  min="0.5"
-                  max="3"
-                  value={selectedElement?.lineHeight ?? 1.55}
-                  disabled={selectedElement?.type !== 'text'}
-                  onChange={e => setTextFormat({ lineHeight: Number(e.target.value) })}
-                  title={biText(profile, '行間を入力', 'Nhập khoảng cách dòng')}
-                />
               </div>
             </div>
             <div className="toolbar-row toolbar-row-bottom">
@@ -1001,8 +935,8 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
             </div>
             <input ref={fileInputRef} className="hidden-file" type="file" accept="image/*" onChange={uploadImage} />
           </div>
-          <div className={`notice editor-notice ${noticeType || ''}`} style={{ display: notice ? 'block' : 'none' }}>{notice}</div>
-          <div className="canvas-stage" ref={stageRef}>
+          {notice && <div className="notice editor-notice">{notice}</div>}
+          <div className="canvas-stage">
             <div className="canvas-stage-inner">
               <div
                 className={`design-canvas ${current.backgroundImage ? 'has-slide-background' : ''}`}
@@ -1029,8 +963,7 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
                       textDecoration: el.underline ? 'underline' : 'none',
                       fontSize: `${el.fontSize || 18}px`,
                       textAlign: el.align || 'left',
-                                  color: el.color || '#201827',
-                                  lineHeight: el.lineHeight || 1.55,
+                      color: el.color || '#201827',
                     }}
                     onMouseDown={e => e.stopPropagation()}
                     onFocus={() => setSelectedId(el.id)}
