@@ -1,20 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AdminLayout } from '../components/AdminLayout.jsx';
 import { ADMIN_SETTINGS } from '../data/adminMockData.js';
-import { apiGetMe, apiUpdateMe, apiLogout } from '../api.js';
-import { Bell, Database, Download, LogOut, RefreshCw, Save, ShieldCheck, SlidersHorizontal, Trash2, UploadCloud, UserPlus } from 'lucide-react';
+import { apiGetMe, apiUpdateMe } from '../api.js';
+import { Database, RefreshCw, Save, Trash2 } from 'lucide-react';
 import { Bi } from '../i18n.jsx';
 
-function getInitialSettings() {
-  try {
-    const saved = JSON.parse(sessionStorage.getItem('smartslide_admin_settings') || 'null');
-    if (saved) return { ...ADMIN_SETTINGS, ...saved, toggles: { ...ADMIN_SETTINGS.toggles, ...(saved.toggles || {}) } };
-  } catch {}
-  return { ...ADMIN_SETTINGS, toggles: { ...ADMIN_SETTINGS.toggles } };
-}
-
 export function AdminSettingsPage({ nav, profile, setProfile }) {
-  const [settings, setSettings] = useState(getInitialSettings);
+  const [settings, setSettings] = useState(() => JSON.parse(sessionStorage.getItem('smartslide_admin_settings') || 'null') || ADMIN_SETTINGS);
   const [notice, setNotice] = useState('');
 
   useEffect(() => {
@@ -26,10 +18,6 @@ export function AdminSettingsPage({ nav, profile, setProfile }) {
       }));
     }).catch(() => {});
   }, []);
-
-  const enabledToggleCount = useMemo(() => {
-    return Object.values(settings.toggles || {}).filter(Boolean).length;
-  }, [settings.toggles]);
 
   function update(path, value) {
     setSettings(prev => {
@@ -60,158 +48,58 @@ export function AdminSettingsPage({ nav, profile, setProfile }) {
   function backup() {
     const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'smartslide-admin-settings.json';
-    a.click();
-    URL.revokeObjectURL(url);
+    const a = document.createElement('a'); a.href = url; a.download = 'smartslide-admin-settings.json'; a.click(); URL.revokeObjectURL(url);
     setNotice('データベース設定をバックアップしました。 / Đã tải file backup cài đặt.');
   }
 
-  async function logout() {
-    try { await apiLogout(); } catch {}
-    setProfile?.(null);
-    nav('login');
-  }
-
-  return <AdminLayout nav={nav} active="admin_settings" profile={profile} setProfile={setProfile}>
-    <section className="admin-page system-settings-page">
-      <header className="admin-page-head split system-settings-head">
-        <div>
-          <h1><Bi jp="システム設定" vi="Cài đặt hệ thống" profile={profile}/></h1>
-          <p><Bi jp="アプリ情報、ユーザー権限、アップロード制限、保守操作を一か所で管理します。" vi="Quản lý thông tin ứng dụng, quyền người dùng, giới hạn upload và thao tác bảo trì tại một nơi." profile={profile}/></p>
-        </div>
-        <button className="admin-primary" onClick={save}><Save size={16}/><Bi jp="保存" vi="Lưu thay đổi" profile={profile}/></button>
+  return <AdminLayout nav={nav} active="admin_settings" profile={profile}>
+    <section className="admin-page">
+      <header className="admin-page-head">
+        <h1><Bi jp="設定" vi="Cài đặt" profile={profile}/></h1>
+        <p><Bi jp="システム設定と機能管理" vi="Quản lý cài đặt và chức năng hệ thống" profile={profile}/></p>
       </header>
-
       {notice && <div className="admin-notice">{notice}</div>}
 
-      <div className="system-settings-summary">
-        <article>
-          <ShieldCheck size={18}/>
-          <span><Bi jp="稼働状態" vi="Trạng thái" profile={profile}/></span>
-          <b>{settings.systemStatus}</b>
-        </article>
-        <article>
-          <SlidersHorizontal size={18}/>
-          <span><Bi jp="機能ON" vi="Tính năng bật" profile={profile}/></span>
-          <b>{enabledToggleCount}/3</b>
-        </article>
-        <article>
-          <UploadCloud size={18}/>
-          <span><Bi jp="最大アップロード" vi="Upload tối đa" profile={profile}/></span>
-          <b>{settings.maxFileSize} MB</b>
-        </article>
-        <article>
-          <Database size={18}/>
-          <span>Version</span>
-          <b>{settings.version}</b>
-        </article>
-      </div>
-
-      <div className="system-settings-grid">
-        <section className="admin-card system-settings-panel general-panel">
-          <div className="settings-panel-title">
-            <SlidersHorizontal size={18}/>
-            <div>
-              <h2><Bi jp="一般設定" vi="Cài đặt chung" profile={profile}/></h2>
-              <p><Bi jp="管理画面とサイト表示に使う基本情報です。" vi="Thông tin nền tảng dùng cho giao diện quản trị và website." profile={profile}/></p>
-            </div>
-          </div>
-
-          <div className="settings-field-grid">
-            <label>
-              <span><Bi jp="アプリ名" vi="Tên ứng dụng" profile={profile}/></span>
-              <input value={settings.appName} onChange={e=>update('appName', e.target.value)} />
-            </label>
-            <label>
-              <span><Bi jp="サイトタイトル" vi="Tiêu đề website" profile={profile}/></span>
-              <input value={settings.siteTitle} onChange={e=>update('siteTitle', e.target.value)} />
-            </label>
-            <label className="wide">
-              <span><Bi jp="管理者メール" vi="Email quản trị" profile={profile}/></span>
-              <input type="email" value={settings.adminEmail} onChange={e=>update('adminEmail', e.target.value)} />
-            </label>
-          </div>
+      <div className="settings-grid">
+        <section className="admin-card settings-card">
+          <h2><Bi jp="一般設定" vi="Cài đặt chung" profile={profile}/></h2>
+          <label><Bi jp="アプリ名" vi="Tên ứng dụng" profile={profile}/></label><input value={settings.appName} onChange={e=>update('appName', e.target.value)} />
+          <label><Bi jp="サイトタイトル" vi="Tiêu đề website" profile={profile}/></label><input value={settings.siteTitle} onChange={e=>update('siteTitle', e.target.value)} />
+          <label><Bi jp="管理者メール" vi="Email quản trị" profile={profile}/></label><input value={settings.adminEmail} onChange={e=>update('adminEmail', e.target.value)} />
         </section>
 
-        <section className="admin-card system-settings-panel quick-panel">
-          <div className="settings-panel-title">
-            <RefreshCw size={18}/>
-            <div>
-              <h2><Bi jp="クイックアクション" vi="Thao tác nhanh" profile={profile}/></h2>
-              <p><Bi jp="保守・同期・バックアップ操作。" vi="Các thao tác bảo trì, đồng bộ và sao lưu." profile={profile}/></p>
-            </div>
-          </div>
-          <div className="settings-action-list">
-            <button onClick={save}><Save size={16}/><span><Bi jp="設定を保存" vi="Lưu cài đặt" profile={profile}/></span></button>
-            <button onClick={clearCache}><Trash2 size={16}/><span><Bi jp="キャッシュクリア" vi="Xóa cache" profile={profile}/></span></button>
-            <button onClick={backup}><Download size={16}/><span><Bi jp="バックアップをダウンロード" vi="Tải backup dữ liệu" profile={profile}/></span></button>
-            <button onClick={() => setNotice('同期が完了しました。 / Đã đồng bộ hệ thống.')}><RefreshCw size={16}/><span><Bi jp="同期リセット" vi="Đồng bộ lại" profile={profile}/></span></button>
-            <button className="danger-action-button" onClick={logout}><LogOut size={16}/><span><Bi jp="ログアウト" vi="Đăng xuất" profile={profile}/></span></button>
-          </div>
+        <section className="admin-card settings-card quick-actions">
+          <h2><Bi jp="クイックアクション" vi="Thao tác nhanh" profile={profile}/></h2>
+          <button onClick={save}><Save size={16}/><Bi jp="設定を保存" vi="Lưu cài đặt" profile={profile}/></button>
+          <button onClick={clearCache}><Trash2 size={16}/><Bi jp="キャッシュクリア" vi="Xóa cache" profile={profile}/></button>
+          <button onClick={backup}><Database size={16}/><Bi jp="データベースダウンロード" vi="Tải backup dữ liệu" profile={profile}/></button>
+          <button onClick={() => setNotice('同期が完了しました。 / Đã đồng bộ hệ thống.')}><RefreshCw size={16}/><Bi jp="同期リセット" vi="Đồng bộ lại" profile={profile}/></button>
         </section>
 
-        <section className="admin-card system-settings-panel">
-          <div className="settings-panel-title">
-            <UserPlus size={18}/>
-            <div>
-              <h2><Bi jp="ユーザー設定" vi="Cài đặt người dùng" profile={profile}/></h2>
-              <p><Bi jp="登録、通知、テンプレート承認を管理します。" vi="Đăng ký, thông báo và duyệt mẫu." profile={profile}/></p>
-            </div>
-          </div>
-          <div className="settings-toggle-list">
-            <Toggle label="ユーザー登録を許可" vi="Cho phép đăng ký" descriptionJp="新しいユーザーが自分でアカウントを作成できます。" descriptionVi="Người dùng mới có thể tự tạo tài khoản." checked={settings.toggles.userRegistration} onChange={v=>update('toggles.userRegistration', v)} profile={profile}/>
-            <Toggle label="メール通知" vi="Thông báo email" descriptionJp="重要なイベントをメールで通知します。" descriptionVi="Gửi email cho các sự kiện quan trọng." checked={settings.toggles.emailNotification} onChange={v=>update('toggles.emailNotification', v)} profile={profile}/>
-            <Toggle label="テンプレート自動承認" vi="Tự động duyệt template" descriptionJp="新しいテンプレートを管理者承認なしで公開します。" descriptionVi="Template mới được xuất bản mà không cần admin duyệt." checked={settings.toggles.templateAutoApprove} onChange={v=>update('toggles.templateAutoApprove', v)} profile={profile}/>
-          </div>
+        <section className="admin-card settings-card">
+          <h2><Bi jp="ユーザー設定" vi="Cài đặt người dùng" profile={profile}/></h2>
+          <Toggle label="ユーザー登録を許可" vi="Cho phép đăng ký" checked={settings.toggles.userRegistration} onChange={v=>update('toggles.userRegistration', v)} profile={profile}/>
+          <Toggle label="メール通知" vi="Thông báo email" checked={settings.toggles.emailNotification} onChange={v=>update('toggles.emailNotification', v)} profile={profile}/>
+          <Toggle label="テンプレート自動承認" vi="Tự động duyệt template" checked={settings.toggles.templateAutoApprove} onChange={v=>update('toggles.templateAutoApprove', v)} profile={profile}/>
         </section>
 
-        <section className="admin-card system-settings-panel">
-          <div className="settings-panel-title">
-            <UploadCloud size={18}/>
-            <div>
-              <h2><Bi jp="アップロード設定" vi="Cài đặt upload" profile={profile}/></h2>
-              <p><Bi jp="ファイルサイズと許可形式を管理します。" vi="Dung lượng và định dạng được phép." profile={profile}/></p>
-            </div>
-          </div>
-          <div className="settings-field-grid single">
-            <label>
-              <span><Bi jp="最大ファイルサイズ (MB)" vi="Dung lượng tối đa (MB)" profile={profile}/></span>
-              <input type="number" min="1" value={settings.maxFileSize} onChange={e=>update('maxFileSize', e.target.value)} />
-            </label>
-            <label>
-              <span><Bi jp="許可ファイル形式" vi="Định dạng cho phép" profile={profile}/></span>
-              <input value={settings.allowedFormats} onChange={e=>update('allowedFormats', e.target.value)} />
-            </label>
-          </div>
+        <section className="admin-card settings-card">
+          <h2><Bi jp="アップロード設定" vi="Cài đặt upload" profile={profile}/></h2>
+          <label><Bi jp="最大ファイルサイズ (MB)" vi="Dung lượng tối đa (MB)" profile={profile}/></label><input type="number" value={settings.maxFileSize} onChange={e=>update('maxFileSize', e.target.value)} />
+          <label><Bi jp="許可ファイル形式" vi="Định dạng cho phép" profile={profile}/></label><input value={settings.allowedFormats} onChange={e=>update('allowedFormats', e.target.value)} />
         </section>
 
-        <section className="admin-card system-settings-panel system-info-panel">
-          <div className="settings-panel-title">
-            <Bell size={18}/>
-            <div>
-              <h2><Bi jp="システム情報" vi="Thông tin hệ thống" profile={profile}/></h2>
-              <p><Bi jp="現在の運用情報です。" vi="Thông tin vận hành hiện tại." profile={profile}/></p>
-            </div>
-          </div>
-          <div className="settings-info-list">
-            <p><span>Version</span><b>{settings.version}</b></p>
-            <p><span>Last update</span><b>{settings.lastUpdate}</b></p>
-            <p><span>Status</span><b className="ok">{settings.systemStatus}</b></p>
-          </div>
+        <section className="admin-card settings-card system-info">
+          <h2><Bi jp="システム情報" vi="Thông tin hệ thống" profile={profile}/></h2>
+          <p><span>Version</span><b>{settings.version}</b></p>
+          <p><span>Last update</span><b>{settings.lastUpdate}</b></p>
+          <p><span>Status</span><b className="ok">{settings.systemStatus}</b></p>
         </section>
       </div>
     </section>
   </AdminLayout>;
 }
 
-function Toggle({ label, vi, descriptionJp, descriptionVi, checked, onChange, profile }) {
-  return <div className="setting-toggle-card">
-    <div>
-      <b><Bi jp={label} vi={vi} profile={profile}/></b>
-      <span><Bi jp={descriptionJp} vi={descriptionVi} profile={profile}/></span>
-    </div>
-    <button className={checked ? 'toggle-switch on' : 'toggle-switch'} onClick={() => onChange(!checked)} type="button" aria-pressed={checked}><i/></button>
-  </div>;
+function Toggle({ label, vi, checked, onChange, profile }) {
+  return <div className="setting-toggle"><span><Bi jp={label} vi={vi} profile={profile}/></span><button className={checked ? 'toggle-switch on' : 'toggle-switch'} onClick={() => onChange(!checked)} type="button"><i/></button></div>;
 }

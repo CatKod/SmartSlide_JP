@@ -3,12 +3,32 @@ import { AdminLayout } from '../components/AdminLayout.jsx';
 import { apiGetTemplates, deleteLocalTemplate, getDeletedLocalTemplates, getLocalTemplateOverrides, setLocalTemplateOverride } from '../api.js';
 import { Filter, MoreVertical, Plus, Search } from 'lucide-react';
 import { Bi, biText } from '../i18n.jsx';
+import { AdminSelect } from '../components/AdminSelect.jsx';
 import { statusLabel } from '../data/adminMockData.js';
 
-const categoryOptions = ['すべて', 'grammar', 'kanji', 'vocabulary', 'conversation', 'business', 'culture'];
-const statusOptions = ['すべて', 'published', 'draft', 'pending', 'rejected'];
+const categoryOptions = [
+  { value: 'すべて', label: 'すべて' },
+  { value: 'grammar', label: '文法' },
+  { value: 'kanji', label: '漢字' },
+  { value: 'vocabulary', label: '語彙' },
+  { value: 'conversation', label: '会話' },
+  { value: 'business', label: 'ビジネス' },
+  { value: 'culture', label: '文化' },
+];
 
-export function AdminTemplatesPage({ nav, profile, setProfile }) {
+const statusOptions = [
+  { value: 'すべて', label: 'すべて' },
+  { value: 'published', label: '公開済み' },
+  { value: 'draft', label: '下書き' },
+  { value: 'pending', label: '保留中' },
+  { value: 'rejected', label: '却下' },
+];
+
+function categoryLabel(value) {
+  return categoryOptions.find(item => item.value === value)?.label || value || 'その他';
+}
+
+export function AdminTemplatesPage({ nav, profile }) {
   const [templates, setTemplates] = useState([]);
   const [query, setQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
@@ -42,7 +62,7 @@ export function AdminTemplatesPage({ nav, profile, setProfile }) {
       id: `local-${Date.now()}`,
       title: data.get('title'),
       category: data.get('category'),
-      categoryLabel: data.get('category'),
+      categoryLabel: categoryLabel(data.get('category')),
       author: data.get('author'),
       downloads: 0,
       status: 'draft',
@@ -87,7 +107,7 @@ export function AdminTemplatesPage({ nav, profile, setProfile }) {
     downloads: templates.reduce((sum, t) => sum + Number(t.downloads || 0), 0),
   };
 
-  return <AdminLayout nav={nav} active="admin_templates" profile={profile} setProfile={setProfile}>
+  return <AdminLayout nav={nav} active="admin_templates" profile={profile}>
     <section className="admin-page">
       <header className="admin-page-head split">
         <div>
@@ -100,11 +120,21 @@ export function AdminTemplatesPage({ nav, profile, setProfile }) {
 
       <div className="admin-toolbar">
         <div className="admin-search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={biText(profile, 'テンプレートを検索...', 'Tìm kiếm template...')} /></div>
-        <div className="admin-filter-wrap">
+        <div className="admin-filter-anchor">
           <button className="admin-filter-button" onClick={() => setFilterOpen(v=>!v)}><Filter size={16}/><Bi jp="フィルタリング" vi="Lọc" profile={profile}/></button>
-          {filterOpen && <div className="admin-filter-popover">
-            <label><Bi jp="カテゴリ" vi="Danh mục" profile={profile}/></label><select value={category} onChange={e=>setCategory(e.target.value)}>{categoryOptions.map(o => <option key={o}>{o}</option>)}</select>
-            <label><Bi jp="ステータス" vi="Trạng thái" profile={profile}/></label><select value={status} onChange={e=>setStatus(e.target.value)}>{statusOptions.map(o => <option key={o}>{o === 'すべて' ? o : statusLabel(o)}</option>)}</select>
+          {filterOpen && <div className="admin-filter-popover admin-filter-popover-near">
+            <AdminSelect
+              label={<Bi jp="カテゴリ" vi="Danh mục" profile={profile}/>}
+              value={category}
+              options={categoryOptions}
+              onChange={setCategory}
+            />
+            <AdminSelect
+              label={<Bi jp="ステータス" vi="Trạng thái" profile={profile}/>}
+              value={status}
+              options={statusOptions}
+              onChange={setStatus}
+            />
           </div>}
         </div>
       </div>
@@ -121,7 +151,7 @@ export function AdminTemplatesPage({ nav, profile, setProfile }) {
           <thead><tr><th><Bi jp="テンプレート" vi="Template" profile={profile}/></th><th><Bi jp="カテゴリ" vi="Danh mục" profile={profile}/></th><th><Bi jp="作成者" vi="Người tạo" profile={profile}/></th><th><Bi jp="ダウンロード数" vi="Lượt tải" profile={profile}/></th><th><Bi jp="ステータス" vi="Trạng thái" profile={profile}/></th><th><Bi jp="作成日" vi="Ngày tạo" profile={profile}/></th><th><Bi jp="アクション" vi="Thao tác" profile={profile}/></th></tr></thead>
           <tbody>{filtered.map(t => <tr key={t.id}>
             <td><div className="template-cell"><img src={t.image || t.thumbnailUrl}/><b>{t.title}</b></div></td>
-            <td><span className="category-pill">{t.categoryLabel || t.category}</span></td>
+            <td><span className="category-pill">{categoryLabel(t.category || t.categoryLabel)}</span></td>
             <td>{t.author || '-'}</td><td>⇩ {Number(t.downloads || 0).toLocaleString()}</td>
             <td><span className={`status-badge ${t.status === 'published' ? 'green' : t.status === 'pending' ? 'yellow' : t.status === 'rejected' ? 'red' : 'gray'}`}>{statusLabel(t.status)}</span></td>
             <td>{t.createdAt ? new Date(t.createdAt).toLocaleDateString('vi-VN') : '-'}</td>
@@ -139,7 +169,8 @@ export function AdminTemplatesPage({ nav, profile, setProfile }) {
         <form className="admin-modal" onClick={e=>e.stopPropagation()} onSubmit={addTemplate}>
           <h3><Bi jp="新しいテンプレート追加" vi="Thêm template mới" profile={profile}/></h3>
           <label><Bi jp="テンプレート名" vi="Tên template" profile={profile}/></label><input name="title" required />
-          <label><Bi jp="カテゴリ" vi="Danh mục" profile={profile}/></label><select name="category">{categoryOptions.filter(x=>x!=='すべて').map(o=><option key={o}>{o}</option>)}</select>
+          <label><Bi jp="カテゴリ" vi="Danh mục" profile={profile}/></label>
+          <select name="category">{categoryOptions.filter(x => x.value !== 'すべて').map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select>
           <label><Bi jp="作成者" vi="Người tạo" profile={profile}/></label><input name="author" required />
           <div className="modal-actions"><button type="button" onClick={() => setShowAdd(false)}><Bi jp="キャンセル" vi="Hủy" profile={profile}/></button><button className="admin-primary"><Bi jp="追加" vi="Thêm" profile={profile}/></button></div>
         </form>
