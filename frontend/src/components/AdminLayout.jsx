@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileText, LayoutDashboard, LogOut, Settings, Users } from 'lucide-react';
 import { Bi } from '../i18n.jsx';
+import { LanguageToggleButton } from './LanguageToggleButton.jsx';
 
 const adminItems = [
   ['admin_dashboard', '管理ダッシュボード', 'Bảng điều khiển quản trị', LayoutDashboard],
@@ -9,7 +10,7 @@ const adminItems = [
   ['admin_settings', 'システム設定', 'Cài đặt hệ thống', Settings],
 ];
 
-export function AdminLayout({ children, nav, active, profile }) {
+export function AdminLayout({ children, nav, active, profile, setProfile }) {
   return <div className="admin-shell">
     <aside className="admin-sidebar">
       <div className="admin-brand" onClick={() => nav('admin_dashboard')}>
@@ -36,6 +37,15 @@ export function AdminLayout({ children, nav, active, profile }) {
         <Bi jp="ログアウト" vi="Đăng xuất" profile={profile}/>
       </button>
     </aside>
-    <main className="admin-main">{children}</main>
+    <main className="admin-main">
+      <header className="admin-topbar">
+        <div>
+          <span className="admin-topbar-kicker"><Bi jp="管理画面" vi="Trang quản trị" profile={profile}/></span>
+          <strong>{profile?.name || profile?.email || 'Admin'}</strong>
+        </div>
+        <LanguageToggleButton profile={profile} setProfile={setProfile} />
+      </header>
+      {children}
+    </main>
   </div>;
 }

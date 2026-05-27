@@ -8,7 +8,7 @@ import { statusLabel } from '../data/adminMockData.js';
 const categoryOptions = ['すべて', 'grammar', 'kanji', 'vocabulary', 'conversation', 'business', 'culture'];
 const statusOptions = ['すべて', 'published', 'draft', 'pending', 'rejected'];
 
-export function AdminTemplatesPage({ nav, profile }) {
+export function AdminTemplatesPage({ nav, profile, setProfile }) {
   const [templates, setTemplates] = useState([]);
   const [query, setQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
@@ -87,7 +87,7 @@ export function AdminTemplatesPage({ nav, profile }) {
     downloads: templates.reduce((sum, t) => sum + Number(t.downloads || 0), 0),
   };
 
-  return <AdminLayout nav={nav} active="admin_templates" profile={profile}>
+  return <AdminLayout nav={nav} active="admin_templates" profile={profile} setProfile={setProfile}>
     <section className="admin-page">
       <header className="admin-page-head split">
         <div>
@@ -100,11 +100,13 @@ export function AdminTemplatesPage({ nav, profile }) {
 
       <div className="admin-toolbar">
         <div className="admin-search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={biText(profile, 'テンプレートを検索...', 'Tìm kiếm template...')} /></div>
-        <button className="admin-filter-button" onClick={() => setFilterOpen(v=>!v)}><Filter size={16}/><Bi jp="フィルタリング" vi="Lọc" profile={profile}/></button>
-        {filterOpen && <div className="admin-filter-popover">
-          <label><Bi jp="カテゴリ" vi="Danh mục" profile={profile}/></label><select value={category} onChange={e=>setCategory(e.target.value)}>{categoryOptions.map(o => <option key={o}>{o}</option>)}</select>
-          <label><Bi jp="ステータス" vi="Trạng thái" profile={profile}/></label><select value={status} onChange={e=>setStatus(e.target.value)}>{statusOptions.map(o => <option key={o}>{o === 'すべて' ? o : statusLabel(o)}</option>)}</select>
-        </div>}
+        <div className="admin-filter-wrap">
+          <button className="admin-filter-button" onClick={() => setFilterOpen(v=>!v)}><Filter size={16}/><Bi jp="フィルタリング" vi="Lọc" profile={profile}/></button>
+          {filterOpen && <div className="admin-filter-popover">
+            <label><Bi jp="カテゴリ" vi="Danh mục" profile={profile}/></label><select value={category} onChange={e=>setCategory(e.target.value)}>{categoryOptions.map(o => <option key={o}>{o}</option>)}</select>
+            <label><Bi jp="ステータス" vi="Trạng thái" profile={profile}/></label><select value={status} onChange={e=>setStatus(e.target.value)}>{statusOptions.map(o => <option key={o}>{o === 'すべて' ? o : statusLabel(o)}</option>)}</select>
+          </div>}
+        </div>
       </div>
 
       <div className="admin-mini-stats">

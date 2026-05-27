@@ -350,9 +350,26 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
         redoEdit();
         return;
       }
-      if (!selectedId) return;
+
+      // Hỗ trợ chuyển slide bằng phím mũi tên lên/xuống khi không gõ chữ
       const tag = document.activeElement?.tagName?.toLowerCase();
       const isTyping = tag === 'textarea' || tag === 'input';
+      if (!isTyping) {
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setActive(prev => Math.max(0, prev - 1));
+          setSelectedId(null);
+          return;
+        }
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setActive(prev => Math.min(slides.length - 1, prev + 1));
+          setSelectedId(null);
+          return;
+        }
+      }
+
+      if (!selectedId) return;
       if (!isTyping && (e.key === 'Delete' || e.key === 'Backspace')) {
         e.preventDefault();
         deleteSelected();
@@ -360,7 +377,15 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
     }
     window.addEventListener('keydown', keydown);
     return () => window.removeEventListener('keydown', keydown);
-  }, [selectedId, active, history]);
+  }, [selectedId, active, history, slides]);
+
+  // Tự động cuộn slide đang hoạt động vào vùng nhìn thấy của thanh bên
+  useEffect(() => {
+    const activeThumb = document.querySelector('.slide-list-items .thumb.active');
+    if (activeThumb) {
+      activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [active]);
 
   useEffect(() => {
     if (!presenting) return;

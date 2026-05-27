@@ -7,7 +7,7 @@ import { Bi, biText } from '../i18n.jsx';
 
 const statusOptions = ['all', 'active', 'inactive', 'suspended'];
 
-export function AdminUsersPage({ nav, profile }) {
+export function AdminUsersPage({ nav, profile, setProfile }) {
   const [users, setUsers] = useState([]);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
@@ -17,7 +17,7 @@ export function AdminUsersPage({ nav, profile }) {
 
   useEffect(() => {
     apiAdminGetDashboardData().then(res => {
-      const merged = getLocalAdminUsers(res.me);
+      const merged = getLocalAdminUsers(res.me, res.users);
       setUsers(merged.length ? merged : INITIAL_ADMIN_USERS);
     }).catch(() => setUsers(getLocalAdminUsers(profile).length ? getLocalAdminUsers(profile) : INITIAL_ADMIN_USERS));
   }, []);
@@ -86,7 +86,7 @@ export function AdminUsersPage({ nav, profile }) {
     suspended: users.filter(u => u.status === 'suspended').length,
   };
 
-  return <AdminLayout nav={nav} active="admin_users" profile={profile}>
+  return <AdminLayout nav={nav} active="admin_users" profile={profile} setProfile={setProfile}>
     <section className="admin-page">
       <header className="admin-page-head split">
         <div>

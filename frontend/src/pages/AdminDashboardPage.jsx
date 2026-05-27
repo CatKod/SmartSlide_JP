@@ -7,8 +7,8 @@ import { Bi } from '../i18n.jsx';
 
 const statIcons = { users: Users, templates: FileText, uploads: Upload, activities: Zap };
 
-export function AdminDashboardPage({ nav, profile }) {
-  const [data, setData] = useState({ templates: [], materials: [], slides: [], me: profile });
+export function AdminDashboardPage({ nav, profile, setProfile }) {
+  const [data, setData] = useState({ templates: [], materials: [], slides: [], users: [], userTotal: 0, userCounts: {}, me: profile });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export function AdminDashboardPage({ nav, profile }) {
   }, []);
 
   const stats = useMemo(() => [
-    { key: 'users', label: '総ユーザー数', vi: 'Tổng người dùng', value: 1, change: '+0%', tone: 'blue' },
+    { key: 'users', label: '総ユーザー数', vi: 'Tổng người dùng', value: data.userTotal || data.users.length, change: `${data.userCounts?.admin || 0} admin`, tone: 'blue' },
     { key: 'templates', label: 'テンプレート', vi: 'Template', value: data.templates.length, change: '+8.2%', tone: 'pink' },
     { key: 'uploads', label: '総アップロード数', vi: 'Tổng upload', value: data.materials.length + data.slides.length, change: '+23.1%', tone: 'green' },
     { key: 'activities', label: '今日のアクティビティ', vi: 'Hoạt động hôm nay', value: data.slides.length, change: '+5.7%', tone: 'purple' },
@@ -44,7 +44,7 @@ export function AdminDashboardPage({ nav, profile }) {
     return [...templates, ...materials, ...RECENT_ACTIVITIES_FALLBACK].slice(0, 5);
   }, [data]);
 
-  return <AdminLayout nav={nav} active="admin_dashboard" profile={profile}>
+  return <AdminLayout nav={nav} active="admin_dashboard" profile={profile} setProfile={setProfile}>
     <section className="admin-page">
       <header className="admin-page-head">
         <div>
