@@ -7,6 +7,59 @@ import { Bi } from '../i18n.jsx';
 
 const statIcons = { users: Users, templates: FileText, uploads: Upload, activities: Zap };
 
+const PIE_COLORS = ['#f76f95', '#6ec7e8', '#98dc90', '#f8c36a', '#f5a5c7', '#a78bfa', '#38bdf8'];
+const ACTIVITY_DOT_COLORS = ['#22c55e', '#14b8a6', '#ff6b9a', '#f59e0b', '#3b82f6'];
+
+function polarToCartesian(cx, cy, r, angle) {
+  const rad = (angle - 90) * Math.PI / 180;
+
+  return {
+    x: cx + r * Math.cos(rad),
+    y: cy + r * Math.sin(rad),
+  };
+}
+
+function describePieSlice(cx, cy, r, startAngle, endAngle) {
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1;
+
+  return [
+    `M ${cx} ${cy}`,
+    `L ${start.x} ${start.y}`,
+    `A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`,
+    'Z',
+  ].join(' ');
+}
+
+function AdminPieChart({ items }) {
+  const total = items.reduce((sum, item) => sum + Number(item.count ?? item.value ?? 0), 0) || 1;
+  let currentAngle = 0;
+
+  return (
+    <svg className="admin-pie-svg" viewBox="0 0 200 200" role="img" aria-label="Template category chart">
+      {items.map((item, index) => {
+        const amount = Number(item.count ?? item.value ?? 0);
+        const startAngle = currentAngle;
+        const endAngle = currentAngle + (amount / total) * 360;
+        currentAngle = endAngle;
+
+        if (amount >= total) {
+          return <circle key={item.label || index} cx="100" cy="100" r="90" fill={item.color} />;
+        }
+
+        return (
+          <path
+            key={item.label || index}
+            d={describePieSlice(100, 100, 90, startAngle, endAngle)}
+            fill={item.color}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
 export function AdminDashboardPage({ nav, profile, setProfile }) {
   const [data, setData] = useState({ templates: [], materials: [], slides: [], users: [], userTotal: 0, userCounts: {}, me: profile });
   const [loading, setLoading] = useState(true);
@@ -26,22 +79,54 @@ export function AdminDashboardPage({ nav, profile, setProfile }) {
     { key: 'activities', label: '今日のアクティビティ', vi: 'Hoạt động hôm nay', value: data.slides.length, change: '+5.7%', tone: 'purple' },
   ], [data]);
 
-  const categoryCounts = useMemo(() => {
+  const categoryStats = useMemo(() => {
     const counts = {};
-    data.templates.forEach(t => { counts[t.categoryLabel || t.category || 'その他'] = (counts[t.categoryLabel || t.category || 'その他'] || 0) + 1; });
-    const total = Math.max(1, data.templates.length);
-    return Object.entries(counts).slice(0, 5).map(([label, count], i) => ({
+
+    data.templates.forEach(t => {
+      const label = t.categoryLabel || t.category || 'その他';
+      counts[label] = (counts[label] || 0) + 1;
+    });
+
+    const entries = Object.entries(counts).slice(0, PIE_COLORS.length);
+
+    if (!entries.length) {
+      return TEMPLATE_CATEGORY_STATS.map((item, i) => ({
+        ...item,
+        count: item.value,
+        color: item.color || PIE_COLORS[i % PIE_COLORS.length],
+      }));
+    }
+
+    const total = entries.reduce((sum, [, count]) => sum + count, 0) || 1;
+
+    return entries.map(([label, count], i) => ({
       label,
       vi: label,
+      count,
       value: Math.round((count / total) * 100),
-      color: TEMPLATE_CATEGORY_STATS[i]?.color || '#f76f95',
+      color: PIE_COLORS[i % PIE_COLORS.length],
     }));
   }, [data.templates]);
 
   const recent = useMemo(() => {
-    const templates = data.templates.slice(0, 2).map(t => ({ title: 'テンプレート確認', vi: 'Kiểm tra template', detail: `${t.title}・backend`, dot: '#22c55e' }));
-    const materials = data.materials.slice(0, 2).map(m => ({ title: '教材アップロード', vi: 'Upload tài liệu', detail: `${m.title}・backend`, dot: '#3b82f6' }));
-    return [...templates, ...materials, ...RECENT_ACTIVITIES_FALLBACK].slice(0, 5);
+    const templates = data.templates.slice(0, 2).map(t => ({
+      title: 'テンプレート確認',
+      vi: 'Kiểm tra template',
+      detail: `${t.title}・backend`,
+    }));
+
+    const materials = data.materials.slice(0, 2).map(m => ({
+      title: '教材アップロード',
+      vi: 'Upload tài liệu',
+      detail: `${m.title}・backend`,
+    }));
+
+    return [...templates, ...materials, ...RECENT_ACTIVITIES_FALLBACK]
+      .slice(0, 5)
+      .map((item, index) => ({
+        ...item,
+        dot: ACTIVITY_DOT_COLORS[index % ACTIVITY_DOT_COLORS.length],
+      }));
   }, [data]);
 
   return <AdminLayout nav={nav} active="admin_dashboard" profile={profile} setProfile={setProfile}>
@@ -91,8 +176,10 @@ export function AdminDashboardPage({ nav, profile, setProfile }) {
         <section className="admin-card pie-card">
           <h2><Bi jp="テンプレートカテゴリー" vi="Danh mục template" profile={profile}/></h2>
           <div className="admin-pie-wrap">
-            <div className="admin-pie" />
-            <div className="pie-legend">{(categoryCounts.length ? categoryCounts : TEMPLATE_CATEGORY_STATS).map(item => <div key={item.label}><i style={{ background: item.color }}/><span><Bi jp={`${item.label} ${item.value}%`} vi={`${item.vi} ${item.value}%`} profile={profile}/></span></div>)}</div>
+            <AdminPieChart items={categoryStats} />
+            <div className="pie-legend">
+              {categoryStats.map(item => <div key={item.label}><i style={{ background: item.color }}/><span><Bi jp={`${item.label} ${item.value}%`} vi={`${item.vi} ${item.value}%`} profile={profile}/></span></div>)}
+            </div>
           </div>
         </section>
 

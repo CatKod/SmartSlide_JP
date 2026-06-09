@@ -48,7 +48,7 @@ export function AdminTemplatesPage({ nav, profile }) {
       const localAdded = JSON.parse(sessionStorage.getItem('smartslide_admin_local_templates') || '[]');
       setTemplates([...localAdded, ...next]);
     }).catch(err => {
-      setNotice(`${err.message} / Backend template API không phản hồi.`);
+      setNotice(biText(profile, `テンプレートAPIの取得に失敗しました: ${err.message}`, `Backend template API không phản hồi: ${err.message}`));
       setTemplates(JSON.parse(sessionStorage.getItem('smartslide_admin_local_templates') || '[]'));
     });
   }
@@ -74,14 +74,14 @@ export function AdminTemplatesPage({ nav, profile }) {
     sessionStorage.setItem('smartslide_admin_local_templates', JSON.stringify(local));
     setTemplates([next, ...templates]);
     setShowAdd(false);
-    setNotice('テンプレートをFE管理リストに追加しました。Backendにはテンプレート作成APIがないため一時保存です。 / Đã thêm template tạm trên FE.');
+    setNotice(biText(profile, 'テンプレートをFE管理リストに追加しました。Backendにはテンプレート作成APIがないため一時保存です。', 'Đã thêm template tạm trên FE.'));
   }
 
   function updateStatus(id, nextStatus) {
     setTemplates(prev => prev.map(t => t.id === id ? { ...t, status: nextStatus } : t));
     setLocalTemplateOverride(id, { status: nextStatus });
     setMenuId(null);
-    setNotice('テンプレート状態を更新しました。 / Đã cập nhật trạng thái template.');
+    setNotice(biText(profile, 'テンプレート状態を更新しました。', 'Đã cập nhật trạng thái template.'));
   }
 
   function removeTemplate(id) {
@@ -89,7 +89,7 @@ export function AdminTemplatesPage({ nav, profile }) {
     deleteLocalTemplate(id);
     setTemplates(prev => prev.filter(t => t.id !== id));
     setMenuId(null);
-    setNotice('テンプレートを管理画面から非表示にしました。 / Đã ẩn template khỏi màn quản trị.');
+    setNotice(biText(profile, 'テンプレートを管理画面から非表示にしました。', 'Đã ẩn template khỏi màn quản trị.'));
   }
 
   const filtered = useMemo(() => templates.filter(t => {

@@ -1239,3 +1239,33 @@
   padding: 20px;
 }
 
+/* Fix: cho vùng chỉnh sửa slide cuộn được khi notice xuất hiện */
+.editor-page .editor-canvas-panel {
+  height: calc(100vh - 56px);
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.editor-page .canvas-wrap {
+  min-height: 0;
+}
+
+.editor-page .canvas-stage {
+  flex-shrink: 0;
+}
+
+/* Fix: khi trình chiếu chỉ hiện chữ, không hiện khung text */
+.presentation-text {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+/*Sửa biểu đồ màn admin*/
+.admin-pie-svg {
+  width: 180px;
+  height: 180px;
+  display: block;
+  flex: none;
+}

@@ -737,8 +737,8 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
         box.style.padding = '14px';
         box.style.whiteSpace = 'pre-wrap';
         box.style.color = el.color || '#201827';
-        box.style.background = '#ffffffd9';
-        box.style.border = '1px solid #eadce5';
+        box.style.background = 'transparent';
+        box.style.border = '0';
       } else if (el.type === 'image') {
         const image = document.createElement('img');
         image.src = el.src || DEFAULT_IMAGE;
@@ -960,8 +960,9 @@ export function SlideEditorPage({ nav, templateId, deckId, profile, setProfile }
             </div>
             <input ref={fileInputRef} className="hidden-file" type="file" accept="image/*" onChange={uploadImage} />
           </div>
-          {notice && <div className="notice editor-notice">{notice}</div>}
-          <div className="canvas-stage">
+        {notice && <div className="notice editor-notice">{notice}</div>}
+
+        <div className="canvas-stage">
             <div className="canvas-stage-inner">
               <div
                 className={`design-canvas ${current.backgroundImage ? 'has-slide-background' : ''}`}

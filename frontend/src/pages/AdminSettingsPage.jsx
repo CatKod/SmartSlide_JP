@@ -3,7 +3,7 @@ import { AdminLayout } from '../components/AdminLayout.jsx';
 import { ADMIN_SETTINGS } from '../data/adminMockData.js';
 import { apiGetMe, apiUpdateMe } from '../api.js';
 import { Database, RefreshCw, Save, Trash2 } from 'lucide-react';
-import { Bi } from '../i18n.jsx';
+import { Bi, biText } from '../i18n.jsx';
 
 export function AdminSettingsPage({ nav, profile, setProfile }) {
   const [settings, setSettings] = useState(() => JSON.parse(sessionStorage.getItem('smartslide_admin_settings') || 'null') || ADMIN_SETTINGS);
@@ -33,23 +33,23 @@ export function AdminSettingsPage({ nav, profile, setProfile }) {
     try {
       const res = await apiUpdateMe({ email: settings.adminEmail });
       setProfile?.(res.user);
-      setNotice('設定を保存し、管理者メールをバックエンドへ更新しました。 / Đã lưu cài đặt và cập nhật email admin lên backend.');
+      setNotice(biText(profile, '設定を保存し、管理者メールをバックエンドへ更新しました。', 'Đã lưu cài đặt và cập nhật email admin lên backend.'));
     } catch (err) {
-      setNotice(`${err.message} / Cài đặt hệ thống đã được lưu tạm trên FE.`);
+      setNotice(biText(profile, `設定はFEに一時保存しました。バックエンド更新に失敗しました: ${err.message}`, `Cài đặt hệ thống đã được lưu tạm trên FE. Cập nhật backend thất bại: ${err.message}`));
     }
   }
 
   function clearCache() {
     sessionStorage.removeItem('smartslide_admin_template_overrides');
     sessionStorage.removeItem('smartslide_admin_deleted_templates');
-    setNotice('システムキャッシュを削除しました。 / Đã xóa cache hệ thống.');
+    setNotice(biText(profile, 'システムキャッシュを削除しました。', 'Đã xóa cache hệ thống.'));
   }
 
   function backup() {
     const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'smartslide-admin-settings.json'; a.click(); URL.revokeObjectURL(url);
-    setNotice('データベース設定をバックアップしました。 / Đã tải file backup cài đặt.');
+    setNotice(biText(profile, 'データベース設定をバックアップしました。', 'Đã tải file backup cài đặt.'));
   }
 
   return <AdminLayout nav={nav} active="admin_settings" profile={profile}>
@@ -73,7 +73,7 @@ export function AdminSettingsPage({ nav, profile, setProfile }) {
           <button onClick={save}><Save size={16}/><Bi jp="設定を保存" vi="Lưu cài đặt" profile={profile}/></button>
           <button onClick={clearCache}><Trash2 size={16}/><Bi jp="キャッシュクリア" vi="Xóa cache" profile={profile}/></button>
           <button onClick={backup}><Database size={16}/><Bi jp="データベースダウンロード" vi="Tải backup dữ liệu" profile={profile}/></button>
-          <button onClick={() => setNotice('同期が完了しました。 / Đã đồng bộ hệ thống.')}><RefreshCw size={16}/><Bi jp="同期リセット" vi="Đồng bộ lại" profile={profile}/></button>
+          <button onClick={() => setNotice(biText(profile, '同期が完了しました。', 'Đã đồng bộ hệ thống.'))}><RefreshCw size={16}/><Bi jp="同期リセット" vi="Đồng bộ lại" profile={profile}/></button>
         </section>
 
         <section className="admin-card settings-card">
