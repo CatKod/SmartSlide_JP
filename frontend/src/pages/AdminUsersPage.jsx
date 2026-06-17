@@ -4,10 +4,16 @@ import { apiAdminCreateUser, apiAdminGetDashboardData, getLocalAdminUsers, setLo
 import { INITIAL_ADMIN_USERS, statusLabel } from '../data/adminMockData.js';
 import { Filter, MoreVertical, Plus, Search } from 'lucide-react';
 import { Bi, biText } from '../i18n.jsx';
+import { AdminSelect } from '../components/AdminSelect.jsx';
 
-const statusOptions = ['all', 'active', 'inactive', 'suspended'];
+const statusOptions = [
+  { value: 'all', label: 'すべて' },
+  { value: 'active', label: 'アクティブ' },
+  { value: 'inactive', label: '非アクティブ' },
+  { value: 'suspended', label: '一時停止' },
+];
 
-export function AdminUsersPage({ nav, profile }) {
+export function AdminUsersPage({ nav, profile, setProfile }) {
   const [users, setUsers] = useState([]);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
@@ -17,7 +23,7 @@ export function AdminUsersPage({ nav, profile }) {
 
   useEffect(() => {
     apiAdminGetDashboardData().then(res => {
-      const merged = getLocalAdminUsers(res.me);
+      const merged = getLocalAdminUsers(res.me, res.users);
       setUsers(merged.length ? merged : INITIAL_ADMIN_USERS);
     }).catch(() => setUsers(getLocalAdminUsers(profile).length ? getLocalAdminUsers(profile) : INITIAL_ADMIN_USERS));
   }, []);
@@ -50,11 +56,11 @@ export function AdminUsersPage({ nav, profile }) {
         fromBackend: true,
       }, ...users];
       persist(next);
-      setNotice('バックエンドにユーザーを登録しました。 / Đã tạo user trên backend.');
+      setNotice(biText(profile, 'バックエンドにユーザーを登録しました。', 'Đã tạo user trên backend.'));
     } catch (err) {
       const next = [{ id: Date.now(), ...payload, status: 'active', uploads: 0, joined: new Date().toLocaleDateString('vi-VN') }, ...users];
       persist(next);
-      setNotice(`${err.message} / Backend tạo user không thành công, đã giữ tạm trên FE.`);
+      setNotice(biText(profile, `ユーザー作成に失敗したため、FEに一時保存しました: ${err.message}`, `Backend tạo user không thành công, đã giữ tạm trên FE: ${err.message}`));
     }
     setShowAdd(false);
   }
@@ -62,14 +68,14 @@ export function AdminUsersPage({ nav, profile }) {
   function updateStatus(id, nextStatus) {
     persist(users.map(u => u.id === id ? { ...u, status: nextStatus } : u));
     setMenuId(null);
-    setNotice('ユーザー状態を更新しました。 / Đã cập nhật trạng thái user.');
+    setNotice(biText(profile, 'ユーザー状態を更新しました。', 'Đã cập nhật trạng thái user.'));
   }
 
   function removeUser(id) {
     if (!confirm(biText(profile, 'このユーザーを削除しますか。', 'Bạn có chắc muốn xóa người dùng này?'))) return;
     persist(users.filter(u => u.id !== id));
     setMenuId(null);
-    setNotice('ユーザーをリストから削除しました。 / Đã xóa user khỏi danh sách FE.');
+    setNotice(biText(profile, 'ユーザーをリストから削除しました。', 'Đã xóa user khỏi danh sách FE.'));
   }
 
   const filtered = useMemo(() => users.filter(u => {
@@ -86,7 +92,7 @@ export function AdminUsersPage({ nav, profile }) {
     suspended: users.filter(u => u.status === 'suspended').length,
   };
 
-  return <AdminLayout nav={nav} active="admin_users" profile={profile}>
+  return <AdminLayout nav={nav} active="admin_users" profile={profile} setProfile={setProfile}>
     <section className="admin-page">
       <header className="admin-page-head split">
         <div>
@@ -99,7 +105,14 @@ export function AdminUsersPage({ nav, profile }) {
 
       <div className="admin-toolbar">
         <div className="admin-search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={biText(profile, 'ユーザーを検索...', 'Tìm kiếm người dùng...')} /></div>
-        <div className="admin-filter"><Filter size={16}/><select value={status} onChange={e=>setStatus(e.target.value)}>{statusOptions.map(s => <option key={s} value={s}>{s === 'all' ? 'すべて' : statusLabel(s)}</option>)}</select></div>
+        <div className="admin-filter admin-filter-inline"><Filter size={16}/>
+          <AdminSelect
+            value={status}
+            options={statusOptions}
+            onChange={setStatus}
+            className="compact"
+          />
+        </div>
       </div>
 
       <div className="admin-mini-stats">

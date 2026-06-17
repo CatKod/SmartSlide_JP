@@ -82,6 +82,10 @@ export async function apiUpdateMe(updates) {
   });
 }
 
+export async function apiGetUsers() {
+  return apiFetch('/users');
+}
+
 // ===== Templates =====
 export async function apiGetTemplates({ keyword, category, level } = {}) {
   const params = new URLSearchParams();
@@ -187,19 +191,23 @@ export async function apiAdminBootstrapLogin(email, password) {
 }
 
 export async function apiAdminGetDashboardData() {
-  const [templatesRes, materialsRes, slidesRes, meRes] = await Promise.allSettled([
+  const [templatesRes, materialsRes, slidesRes, meRes, usersRes] = await Promise.allSettled([
     apiGetTemplates(),
     apiGetMaterials(),
     apiGetMySlides(),
     apiGetMe(),
+    apiGetUsers(),
   ]);
 
   const templates = templatesRes.status === 'fulfilled' ? (templatesRes.value.templates || []) : [];
   const materials = materialsRes.status === 'fulfilled' ? (materialsRes.value.materials || []) : [];
   const slides = slidesRes.status === 'fulfilled' ? (slidesRes.value.slides || []) : [];
   const me = meRes.status === 'fulfilled' ? meRes.value.user : getUser();
+  const users = usersRes.status === 'fulfilled' ? (usersRes.value.users || []) : [];
+  const userTotal = usersRes.status === 'fulfilled' ? Number(usersRes.value.total || users.length) : users.length;
+  const userCounts = usersRes.status === 'fulfilled' ? (usersRes.value.counts || {}) : {};
 
-  return { templates, materials, slides, me };
+  return { templates, materials, slides, me, users, userTotal, userCounts };
 }
 
 export async function apiAdminCreateUser({ name, email, role = 'teacher', password = 'password123' }) {
@@ -208,10 +216,20 @@ export async function apiAdminCreateUser({ name, email, role = 'teacher', passwo
   return apiRegister({ username, name, email, password, role });
 }
 
-export function getLocalAdminUsers(currentUser) {
+export function getLocalAdminUsers(currentUser, backendUsers = []) {
   const saved = sessionStorage.getItem('smartslide_admin_users_cache');
   const cached = saved ? JSON.parse(saved) : [];
-  const current = currentUser ? [{
+  const backend = backendUsers.map(user => ({
+    id: user._id || user.id,
+    name: user.name || user.username || user.email,
+    email: user.email,
+    role: user.role || 'teacher',
+    status: user.status || 'active',
+    uploads: Number(user.uploads || 0),
+    joined: user.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN'),
+    fromBackend: true,
+  }));
+  const current = !backend.length && currentUser ? [{
     id: currentUser._id || currentUser.id || 'me',
     name: currentUser.name || currentUser.username || 'Admin',
     email: currentUser.email || 'admin@example.com',
@@ -221,7 +239,7 @@ export function getLocalAdminUsers(currentUser) {
     joined: currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN'),
     fromBackend: true,
   }] : [];
-  const merged = [...current, ...cached];
+  const merged = [...backend, ...current, ...cached];
   return merged.filter((u, index, arr) => arr.findIndex(x => x.email === u.email) === index);
 }
 

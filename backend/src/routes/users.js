@@ -5,6 +5,38 @@ const auth = require('../middleware/auth');
 
 const router = express.Router();
 
+function requireAdmin(req, res, next) {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: '管理者権限が必要です (Admin role required)' });
+  }
+  next();
+}
+
+/**
+ * GET /api/users
+ * Admin: lấy danh sách toàn bộ người dùng để thống kê và quản lý.
+ */
+router.get('/', auth, requireAdmin, async (req, res) => {
+  try {
+    const users = await User.find({})
+      .sort({ createdAt: -1 })
+      .select('-password_hash -__v');
+
+    const counts = users.reduce((acc, user) => {
+      acc[user.role] = (acc[user.role] || 0) + 1;
+      return acc;
+    }, { admin: 0, teacher: 0, student: 0 });
+
+    res.json({
+      users: users.map(user => user.toJSON()),
+      total: users.length,
+      counts,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'サーバーエラー (Server error)' });
+  }
+});
+
 /**
  * GET /api/users/me
  * Lấy thông tin user hiện tại
